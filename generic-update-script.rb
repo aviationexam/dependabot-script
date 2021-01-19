@@ -45,6 +45,14 @@ branch = ENV["BRANCH"]
 # - terraform
 package_manager = ENV["PACKAGE_MANAGER"] || "bundler"
 
+if ENV["NUGET_ACCESS_TOKEN"] && ENV["NUGET_FEED"]
+  credentials << {
+    "type" => "nuget_feed",
+    "url" => ENV["NUGET_FEED"],
+    "token" => ":#{ENV["NUGET_ACCESS_TOKEN"]}" # Don't forget the colon
+  }
+end
+
 if ENV["GITHUB_ENTERPRISE_ACCESS_TOKEN"]
   credentials << {
     "type" => "git_source",
