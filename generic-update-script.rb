@@ -61,7 +61,7 @@ end
 if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
   credentials << {
     "type" => "npm_registry",
-    "url" => ENV["NPM_REGISTRY"],
+    "registry" => ENV["NPM_REGISTRY"],
     "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
   }
 end
