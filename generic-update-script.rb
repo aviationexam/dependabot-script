@@ -53,6 +53,14 @@ if ENV["NUGET_ACCESS_TOKEN"] && ENV["NUGET_FEED"]
   }
 end
 
+if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
+  credentials << {
+    "type" => "npm_registry",
+    "url" => ENV["NPM_REGISTRY"],
+    "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
+  }
+end
+
 if ENV["GITHUB_ENTERPRISE_ACCESS_TOKEN"]
   credentials << {
     "type" => "git_source",
