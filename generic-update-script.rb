@@ -65,7 +65,7 @@ if ENV["ALTERNATIVE_NUGET_FEED"]
 
   credentials << {
     "type" => "nuget_feed",
-    "url" => ENV["ALTERNATIVE_NNUGET_FEED"],
+    "url" => ENV["ALTERNATIVE_NUGET_FEED"],
     "token" => alternativeToken
   }
 end
