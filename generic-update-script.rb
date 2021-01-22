@@ -52,12 +52,26 @@ if ENV["NUGET_ACCESS_TOKEN"] && ENV["NUGET_FEED"]
     "token" => ":#{ENV["NUGET_ACCESS_TOKEN"]}" # Don't forget the colon
   }
 end
+if ENV["ALTERNATIVE_NUGET_ACCESS_TOKEN"] && ENV["ALTERNATIVE_NNUGET_FEED"]
+  credentials << {
+    "type" => "nuget_feed",
+    "url" => ENV["ALTERNATIVE_NNUGET_FEED"],
+    "token" => ":#{ENV["ALTERNATIVE_NNUGET_ACCESS_TOKEN"]}" # Don't forget the colon
+  }
+end
 
 if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
   credentials << {
     "type" => "npm_registry",
     "registry" => ENV["NPM_REGISTRY"],
     "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
+  }
+end
+if ENV["ALTERNATIVE_NPM_ACCESS_TOKEN"] && ENV["ALTERNATIVE_NPM_REGISTRY"]
+  credentials << {
+    "type" => "npm_registry",
+    "registry" => ENV["ALTERNATIVE_NPM_REGISTRY"],
+    "token" => ":#{ENV["ALTERNATIVE_NPM_ACCESS_TOKEN"]}" # Don't forget the colon
   }
 end
 
