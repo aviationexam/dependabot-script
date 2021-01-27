@@ -45,6 +45,25 @@ branch = ENV["BRANCH"]
 # - terraform
 package_manager = ENV["PACKAGE_MANAGER"] || "bundler"
 
+provider_metadata = nil
+if ENV["AZURE_WORK_ITEM"]
+  provider_metadata = {
+    work_item: ENV["AZURE_WORK_ITEM"]
+  }
+end
+
+if ENV["ALTERNATIVE_NUGET_FEED"]
+  alternative_token = nil
+  unless ENV["ALTERNATIVE_NUGET_ACCESS_TOKEN"].nil?
+    alternative_token = ":#{ENV["ALTERNATIVE_NUGET_ACCESS_TOKEN"]}"
+  end
+
+  credentials << {
+    "type" => "nuget_feed",
+    "url" => ENV["ALTERNATIVE_NUGET_FEED"],
+    "token" => alternative_token
+  }
+end
 if ENV["NUGET_ACCESS_TOKEN"] && ENV["NUGET_FEED"]
   credentials << {
     "type" => "nuget_feed",
@@ -52,36 +71,24 @@ if ENV["NUGET_ACCESS_TOKEN"] && ENV["NUGET_FEED"]
     "token" => ":#{ENV["NUGET_ACCESS_TOKEN"]}" # Don't forget the colon
   }
 end
-if ENV["ALTERNATIVE_NUGET_FEED"]
-  alternativeToken = nil
-  unless ENV["ALTERNATIVE_NUGET_ACCESS_TOKEN"].nil?
-    alternativeToken = ":#{ENV["ALTERNATIVE_NUGET_ACCESS_TOKEN"]}"
-  end
 
-  credentials << {
-    "type" => "nuget_feed",
-    "url" => ENV["ALTERNATIVE_NNUGET_FEED"],
-    "token" => alternativeToken
-  }
-end
-
-if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
-  credentials << {
-    "type" => "npm_registry",
-    "registry" => ENV["NPM_REGISTRY"],
-    "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
-  }
-end
 if ENV["ALTERNATIVE_NPM_REGISTRY"]
-  alternativeToken = nil
+  alternative_token = nil
   unless ENV["ALTERNATIVE_NPM_ACCESS_TOKEN"].nil?
-    alternativeToken = ":#{ENV["ALTERNATIVE_NPM_ACCESS_TOKEN"]}"
+    alternative_token = ":#{ENV["ALTERNATIVE_NPM_ACCESS_TOKEN"]}"
   end
 
   credentials << {
     "type" => "npm_registry",
     "registry" => ENV["ALTERNATIVE_NPM_REGISTRY"],
-    "token" => alternativeToken
+    "token" => alternative_token
+  }
+end
+if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
+  credentials << {
+    "type" => "npm_registry",
+    "registry" => ENV["NPM_REGISTRY"],
+    "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
   }
 end
 
@@ -180,6 +187,10 @@ dependencies.select(&:top_level?).each do |dep|
     credentials: credentials,
   )
 
+  if checker.up_to_date?
+    puts "#{dep.name} - up to date"
+  end
+
   next if checker.up_to_date?
 
   requirements_to_unlock =
@@ -221,6 +232,7 @@ dependencies.select(&:top_level?).each do |dep|
     credentials: credentials,
     assignees: [(ENV["PULL_REQUESTS_ASSIGNEE"] || ENV["GITLAB_ASSIGNEE_ID"])&.to_i],
     label_language: true,
+    provider_metadata: provider_metadata
   )
   pull_request = pr_creator.create
   puts " submitted"
