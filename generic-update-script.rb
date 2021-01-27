@@ -47,8 +47,9 @@ package_manager = ENV["PACKAGE_MANAGER"] || "bundler"
 
 provider_metadata = nil
 if ENV["AZURE_WORK_ITEM"]
+  azure_work_item = ENV["AZURE_WORK_ITEM"].to_i
   provider_metadata = {
-    work_item: ENV["AZURE_WORK_ITEM"]
+    work_item: azure_work_item
   }
 end
 
@@ -188,7 +189,7 @@ dependencies.select(&:top_level?).each do |dep|
   )
 
   if checker.up_to_date?
-    puts "#{dep.name} - up to date"
+    puts "#{dep.name} (version #{dep.version}) - up to date"
   end
 
   next if checker.up_to_date?
