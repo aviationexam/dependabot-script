@@ -302,6 +302,49 @@ dependencies.select(&:top_level?).each do |dep|
       merge_when_pipeline_succeeds: true,
       should_remove_source_branch: true
     )
+  elsif ENV["AZURE_AUTO_MERGE"] && ENV["AZURE_REVIEWER"]
+    azure_reviewer = ENV["AZURE_REVIEWER"]
+
+    azure_client = Azure.client(
+      endpoint: source.api_endpoint,
+      private_token: ENV["AZURE_ACCESS_TOKEN"]
+    )
+
+    content = {
+      autoCompleteSetBy: {
+        id: "#{azure_reviewer}"
+      },
+      completionOptions: {
+        mergeCommitMessage: "Localization update",
+        deleteSourceBranch: true,
+        squashMerge: true,
+        mergeStrategy: "squash",
+        transitionWorkItems: false,
+        autoCompleteIgnoreConfigIds: []
+      }
+    }
+    auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request.pullRequestId}?api-version=6.0"
+
+    url = auto_merge_url
+    json = content.to_json
+    response = Excon.patch(
+      url,
+      body: json,
+      user: azure_client.credentials&.fetch("username", nil),
+      password: azure_client.credentials&.fetch("password", nil),
+      idempotent: true,
+      **SharedHelpers.excon_defaults(
+        headers: auth_header.merge(
+          {
+            "Content-Type" => "application/json"
+          }
+        )
+      )
+    )
+
+    raise InternalServerError if response.status == 500
+    raise BadGateway if response.status == 502
+    raise ServiceNotAvailable if response.status == 503
   end
 end
 
