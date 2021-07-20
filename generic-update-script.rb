@@ -88,6 +88,7 @@ if ENV["ALTERNATIVE_NPM_REGISTRY"]
   credentials << {
     "type" => "npm_registry",
     "registry" => ENV["ALTERNATIVE_NPM_REGISTRY"],
+    "url" => ENV["ALTERNATIVE_NPM_REGISTRY_URL"],
     "token" => alternative_token
   }
 end
@@ -95,6 +96,7 @@ if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
   credentials << {
     "type" => "npm_registry",
     "registry" => ENV["NPM_REGISTRY"],
+    "url" => ENV["NPM_REGISTRY_URL"],
     "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
   }
 end
@@ -302,8 +304,8 @@ dependencies.select(&:top_level?).each do |dep|
       merge_when_pipeline_succeeds: true,
       should_remove_source_branch: true
     )
-  elsif ENV["AZURE_AUTO_MERGE"] && ENV["AZURE_REVIEWER"]
-    azure_reviewer = ENV["AZURE_REVIEWER"]
+  elsif ENV["AZURE_AUTO_MERGE"] && ENV["AZURE_AUTOCOMPLETE_BY"]
+    azure_autocomplete_by = ENV["AZURE_AUTOCOMPLETE_BY"]
 
     azure_client = Azure.client(
       endpoint: source.api_endpoint,
@@ -312,7 +314,7 @@ dependencies.select(&:top_level?).each do |dep|
 
     content = {
       autoCompleteSetBy: {
-        id: "#{azure_reviewer}"
+        id: "#{azure_autocomplete_by}"
       },
       completionOptions: {
         mergeCommitMessage: "Localization update",
