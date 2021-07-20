@@ -7,6 +7,7 @@ require "dependabot/update_checkers"
 require "dependabot/file_updaters"
 require "dependabot/pull_request_creator"
 require "dependabot/omnibus"
+require "dependabot/clients/azure"
 require "gitlab"
 
 credentials = [
@@ -73,6 +74,14 @@ if ENV["NUGET_ACCESS_TOKEN"] && ENV["NUGET_FEED"]
   }
 end
 
+if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
+  credentials << {
+    "type" => "npm_registry",
+    "registry" => ENV["NPM_REGISTRY"],
+    "url" => ENV["NPM_REGISTRY_URL"],
+    "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
+  }
+end
 if ENV["ALTERNATIVE_NPM_REGISTRY"]
   alternative_token = nil
   unless ENV["ALTERNATIVE_NPM_ACCESS_TOKEN"].nil?
@@ -84,14 +93,6 @@ if ENV["ALTERNATIVE_NPM_REGISTRY"]
     "registry" => ENV["ALTERNATIVE_NPM_REGISTRY"],
     "url" => ENV["ALTERNATIVE_NPM_REGISTRY_URL"],
     "token" => alternative_token
-  }
-end
-if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
-  credentials << {
-    "type" => "npm_registry",
-    "registry" => ENV["NPM_REGISTRY"],
-    "url" => ENV["NPM_REGISTRY_URL"],
-    "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
   }
 end
 
@@ -216,6 +217,20 @@ parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
 
 dependencies = parser.parse
 
+def auth_header_for(token)
+  return {} unless token
+
+  if token.include?(":")
+    encoded_token = Base64.encode64(token).delete("\n")
+    { "Authorization" => "Basic #{encoded_token}" }
+  elsif Base64.decode64(token).ascii_only? &&
+    Base64.decode64(token).include?(":")
+    { "Authorization" => "Basic #{token.delete("\n")}" }
+  else
+    { "Authorization" => "Bearer #{token}" }
+  end
+end
+
 dependencies.select(&:top_level?).each do |dep|
   #########################################
   # Get update details for the dependency #
@@ -297,10 +312,13 @@ dependencies.select(&:top_level?).each do |dep|
   elsif ENV["AZURE_AUTO_MERGE"] && ENV["AZURE_AUTOCOMPLETE_BY"]
     azure_autocomplete_by = ENV["AZURE_AUTOCOMPLETE_BY"]
 
-    azure_client = Azure.client(
-      endpoint: source.api_endpoint,
-      private_token: ENV["AZURE_ACCESS_TOKEN"]
-    )
+    pull_request_id = JSON.parse(pull_request.body).fetch("pullRequestId")
+
+    puts pull_request_id
+
+    azure_credential = credentials.
+      select { |cred| cred["type"] == "git_source" }.
+      find { |cred| cred["host"] == source.hostname }
 
     content = {
       autoCompleteSetBy: {
@@ -315,18 +333,20 @@ dependencies.select(&:top_level?).each do |dep|
         autoCompleteIgnoreConfigIds: []
       }
     }
-    auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request.pullRequestId}?api-version=6.0"
+    auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}?api-version=6.0"
+
+    @auth_header ||= auth_header_for(azure_credential&.fetch("token", nil))
 
     url = auto_merge_url
     json = content.to_json
     response = Excon.patch(
       url,
       body: json,
-      user: azure_client.credentials&.fetch("username", nil),
-      password: azure_client.credentials&.fetch("password", nil),
+      user: azure_credential&.fetch("username", nil),
+      password: azure_credential&.fetch("password", nil),
       idempotent: true,
-      **SharedHelpers.excon_defaults(
-        headers: auth_header.merge(
+      **Dependabot::SharedHelpers.excon_defaults(
+        headers: @auth_header.merge(
           {
             "Content-Type" => "application/json"
           }
@@ -334,9 +354,9 @@ dependencies.select(&:top_level?).each do |dep|
       )
     )
 
-    raise InternalServerError if response.status == 500
-    raise BadGateway if response.status == 502
-    raise ServiceNotAvailable if response.status == 503
+    raise Dependabot::Clients::Azure::InternalServerError if response.status == 500
+    raise Dependabot::Clients::Azure::BadGateway if response.status == 502
+    raise Dependabot::Clients::Azure::ServiceNotAvailable if response.status == 503
   end
 end
 
