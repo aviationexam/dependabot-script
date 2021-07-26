@@ -60,6 +60,11 @@ if ENV["AZURE_WORK_ITEM"]
   }
 end
 
+ignore_dependency = []
+if ENV["IGNORE_DEPENDENCY"]
+  ignore_dependency = ENV["IGNORE_DEPENDENCY"].split(",")
+end
+
 if ENV["ALTERNATIVE_NUGET_FEED"]
   alternative_token = nil
   unless ENV["ALTERNATIVE_NUGET_ACCESS_TOKEN"].nil?
@@ -252,6 +257,12 @@ dependencies.select(&:top_level?).each do |dep|
 
   if checker.up_to_date?
     puts "#{dep.name} (version #{dep.version}) - up to date"
+  end
+
+  if ignore_dependency.include? dep.name
+    puts "#{dep.name} (version #{dep.version}) - ignoring"
+
+    next
   end
 
   next if checker.up_to_date?
