@@ -346,7 +346,7 @@ dependencies.select(&:top_level?).each do |dep|
         id: "#{azure_autocomplete_by}"
       },
       completionOptions: {
-        mergeCommitMessage: "Localization update",
+        mergeCommitMessage: "Updating #{dep.name} (from #{dep.version})",
         deleteSourceBranch: true,
         squashMerge: true,
         mergeStrategy: "squash",
