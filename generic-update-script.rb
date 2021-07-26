@@ -198,6 +198,10 @@ else
   )
 end
 
+ignore_dependency.each do |d|
+  puts "Ignored dependency: #{d}"
+end
+
 ##############################
 # Fetch the dependency files #
 ##############################
