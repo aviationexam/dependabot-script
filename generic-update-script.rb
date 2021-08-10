@@ -357,7 +357,38 @@ dependencies.select(&:top_level?).each do |dep|
         select { |cred| cred["type"] == "git_source" }.
         find { |cred| cred["host"] == source.hostname }
 
-      content = {
+      auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}?api-version=6.0"
+
+      @auth_header ||= auth_header_for(azure_credential&.fetch("token", nil))
+
+      if assignees.count > 0
+        set_reviewers_content = {
+          reviewers: assignees.map { |reviewer| { id: reviewer } }
+        }
+        set_reviewers_json = set_reviewers_content.to_json
+        response = Excon.patch(
+          auto_merge_url,
+          body: set_reviewers_json,
+          user: azure_credential&.fetch("username", nil),
+          password: azure_credential&.fetch("password", nil),
+          idempotent: true,
+          **Dependabot::SharedHelpers.excon_defaults(
+            headers: @auth_header.merge(
+              {
+                "Content-Type" => "application/json"
+              }
+            )
+          )
+        )
+
+        raise Dependabot::Clients::Azure::InternalServerError if response.status == 500
+        raise Dependabot::Clients::Azure::BadGateway if response.status == 502
+        raise Dependabot::Clients::Azure::ServiceNotAvailable if response.status == 503
+
+        puts "reviewers set"
+      end
+
+      set_autocompletion_content = {
         autoCompleteSetBy: {
           id: "#{azure_autocomplete_by}"
         },
@@ -368,18 +399,13 @@ dependencies.select(&:top_level?).each do |dep|
           mergeStrategy: "squash",
           transitionWorkItems: false,
           autoCompleteIgnoreConfigIds: []
-        },
-        reviewers: assignees.map { |reviewer| { id: reviewer } }
+        }
       }
-      auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}?api-version=6.0"
 
-      @auth_header ||= auth_header_for(azure_credential&.fetch("token", nil))
-
-      url = auto_merge_url
-      json = content.to_json
+      set_autocompletion_json = set_autocompletion_content.to_json
       response = Excon.patch(
-        url,
-        body: json,
+        auto_merge_url,
+        body: set_autocompletion_json,
         user: azure_credential&.fetch("username", nil),
         password: azure_credential&.fetch("password", nil),
         idempotent: true,
@@ -395,6 +421,8 @@ dependencies.select(&:top_level?).each do |dep|
       raise Dependabot::Clients::Azure::InternalServerError if response.status == 500
       raise Dependabot::Clients::Azure::BadGateway if response.status == 502
       raise Dependabot::Clients::Azure::ServiceNotAvailable if response.status == 503
+
+      puts "autocompletion set"
     end
   end
 end
