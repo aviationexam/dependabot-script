@@ -281,7 +281,7 @@ dependencies.select(&:top_level?).each do |dep|
   #####################################
   # Generate updated dependency files #
   #####################################
-  print "  - Updating #{dep.name} (from #{dep.version})…"
+  puts "  - Updating #{dep.name} (from #{dep.version})…"
   updater = Dependabot::FileUpdaters.for_package_manager(package_manager).new(
     dependencies: updated_deps,
     dependency_files: files,
@@ -307,9 +307,10 @@ dependencies.select(&:top_level?).each do |dep|
     provider_metadata: provider_metadata
   )
   pull_request = pr_creator.create
-  puts " submitted"
 
   next unless pull_request
+
+  puts " submitted"
 
   # Enable GitLab "merge when pipeline succeeds" feature.
   # Merge requests created and successfully tested will be merge automatically.
@@ -327,51 +328,56 @@ dependencies.select(&:top_level?).each do |dep|
   elsif ENV["AZURE_AUTO_MERGE"] && ENV["AZURE_AUTOCOMPLETE_BY"]
     azure_autocomplete_by = ENV["AZURE_AUTOCOMPLETE_BY"]
 
-    pull_request_id = JSON.parse(pull_request.body).fetch("pullRequestId")
+    begin
+      pull_request_id = JSON.parse(pull_request.body).fetch("pullRequestId")
 
-    puts pull_request_id
+    rescue KeyError
+      puts "Unexpected PR response #{pull_request.body}"
+    else
+      puts pull_request_id
 
-    azure_credential = credentials.
-      select { |cred| cred["type"] == "git_source" }.
-      find { |cred| cred["host"] == source.hostname }
+      azure_credential = credentials.
+        select { |cred| cred["type"] == "git_source" }.
+        find { |cred| cred["host"] == source.hostname }
 
-    content = {
-      autoCompleteSetBy: {
-        id: "#{azure_autocomplete_by}"
-      },
-      completionOptions: {
-        mergeCommitMessage: "Updating #{dep.name} (from #{dep.version})",
-        deleteSourceBranch: true,
-        squashMerge: true,
-        mergeStrategy: "squash",
-        transitionWorkItems: false,
-        autoCompleteIgnoreConfigIds: []
+      content = {
+        autoCompleteSetBy: {
+          id: "#{azure_autocomplete_by}"
+        },
+        completionOptions: {
+          mergeCommitMessage: "Updating #{dep.name} (from #{dep.version})",
+          deleteSourceBranch: true,
+          squashMerge: true,
+          mergeStrategy: "squash",
+          transitionWorkItems: false,
+          autoCompleteIgnoreConfigIds: []
+        }
       }
-    }
-    auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}?api-version=6.0"
+      auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}?api-version=6.0"
 
-    @auth_header ||= auth_header_for(azure_credential&.fetch("token", nil))
+      @auth_header ||= auth_header_for(azure_credential&.fetch("token", nil))
 
-    url = auto_merge_url
-    json = content.to_json
-    response = Excon.patch(
-      url,
-      body: json,
-      user: azure_credential&.fetch("username", nil),
-      password: azure_credential&.fetch("password", nil),
-      idempotent: true,
-      **Dependabot::SharedHelpers.excon_defaults(
-        headers: @auth_header.merge(
-          {
-            "Content-Type" => "application/json"
-          }
+      url = auto_merge_url
+      json = content.to_json
+      response = Excon.patch(
+        url,
+        body: json,
+        user: azure_credential&.fetch("username", nil),
+        password: azure_credential&.fetch("password", nil),
+        idempotent: true,
+        **Dependabot::SharedHelpers.excon_defaults(
+          headers: @auth_header.merge(
+            {
+              "Content-Type" => "application/json"
+            }
+          )
         )
       )
-    )
 
-    raise Dependabot::Clients::Azure::InternalServerError if response.status == 500
-    raise Dependabot::Clients::Azure::BadGateway if response.status == 502
-    raise Dependabot::Clients::Azure::ServiceNotAvailable if response.status == 503
+      raise Dependabot::Clients::Azure::InternalServerError if response.status == 500
+      raise Dependabot::Clients::Azure::BadGateway if response.status == 502
+      raise Dependabot::Clients::Azure::ServiceNotAvailable if response.status == 503
+    end
   end
 end
 
