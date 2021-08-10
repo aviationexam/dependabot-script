@@ -303,8 +303,15 @@ dependencies.select(&:top_level?).each do |dep|
   ########################################
   # Create a pull request for the update #
   ########################################
-  assignee = (ENV["PULL_REQUESTS_ASSIGNEE"] || ENV["GITLAB_ASSIGNEE_ID"])&.to_i
-  assignees = assignee ? [assignee] : assignee
+  if ENV["PULL_REQUESTS_ASSIGNEE"]
+    assignee = ENV["PULL_REQUESTS_ASSIGNEE"]&.to_s
+  elsif ENV["GITLAB_ASSIGNEE_ID"]
+    assignee = ENV["GITLAB_ASSIGNEE_ID"]&.to_i
+  else
+    assignee = nil
+  end
+  assignees = assignee != nil ? [assignee] : []
+
   pr_creator = Dependabot::PullRequestCreator.new(
     source: source,
     base_commit: commit,
@@ -361,7 +368,8 @@ dependencies.select(&:top_level?).each do |dep|
           mergeStrategy: "squash",
           transitionWorkItems: false,
           autoCompleteIgnoreConfigIds: []
-        }
+        },
+        reviewers: assignees.map { |reviewer| { id: reviewer } }
       }
       auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}?api-version=6.0"
 
