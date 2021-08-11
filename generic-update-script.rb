@@ -241,6 +241,11 @@ def auth_header_for(token)
 end
 
 dependencies.select(&:top_level?).each do |dep|
+  if dep.version.start_with?('$')
+    puts "__ #{dep.name} - managed externally"
+    next
+  end
+
   #########################################
   # Get update details for the dependency #
   #########################################
@@ -255,7 +260,7 @@ dependencies.select(&:top_level?).each do |dep|
   end
 
   if ignore_dependency.include? dep.name
-    puts "#{dep.name} (version #{dep.version}) - ignoring"
+    puts "__ #{dep.name} (version #{dep.version}) - ignoring"
 
     next
   end
@@ -281,7 +286,9 @@ dependencies.select(&:top_level?).each do |dep|
   #####################################
   # Generate updated dependency files #
   #####################################
-  puts "  - Updating #{dep.name} (from #{dep.version})…"
+  updated_deps.dup.each do |d|
+    puts "  - Updating #{d.name} (from #{d.previous_version} to #{d.version})…"
+  end
   updater = Dependabot::FileUpdaters.for_package_manager(package_manager).new(
     dependencies: updated_deps,
     dependency_files: files,
@@ -302,11 +309,13 @@ dependencies.select(&:top_level?).each do |dep|
   end
   assignees = assignee != nil ? [assignee] : []
 
+  updated_files_distinct = updated_files.uniq { |updated_file| updated_file.path }
+
   pr_creator = Dependabot::PullRequestCreator.new(
     source: source,
     base_commit: commit,
     dependencies: updated_deps,
-    files: updated_files,
+    files: updated_files_distinct,
     credentials: credentials,
     assignees: assignees,
     author_details: { name: "Dependabot", email: "no-reply@github.com" },
@@ -356,6 +365,7 @@ dependencies.select(&:top_level?).each do |dep|
           reviewers: assignees.map { |reviewer| { id: reviewer } }
         }
         set_reviewers_json = set_reviewers_content.to_json
+
         response = Excon.patch(
           auto_merge_url,
           body: set_reviewers_json,
@@ -378,12 +388,14 @@ dependencies.select(&:top_level?).each do |dep|
         puts "reviewers set"
       end
 
+      merge_commit_message = updated_deps.map { |d| "Updating #{d.name} (from #{d.previous_version} to #{d.version})" }.join('\n')
+
       set_autocompletion_content = {
         autoCompleteSetBy: {
           id: "#{azure_autocomplete_by}"
         },
         completionOptions: {
-          mergeCommitMessage: "Updating #{dep.name} (from #{dep.version})",
+          mergeCommitMessage: merge_commit_message,
           deleteSourceBranch: true,
           squashMerge: true,
           mergeStrategy: "squash",
