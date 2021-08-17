@@ -311,13 +311,12 @@ dependencies.select(&:top_level?).each do |dep|
   # Create a pull request for the update #
   ########################################
   if ENV["PULL_REQUESTS_ASSIGNEE"]
-    assignee = ENV["PULL_REQUESTS_ASSIGNEE"]&.to_s
+    assignees = [ENV["PULL_REQUESTS_ASSIGNEE"]&.to_s]
   elsif ENV["GITLAB_ASSIGNEE_ID"]
-    assignee = ENV["GITLAB_ASSIGNEE_ID"]&.to_i
+    assignees = [ENV["GITLAB_ASSIGNEE_ID"]&.to_i]
   else
-    assignee = nil
+    assignees = []
   end
-  assignees = assignee != nil ? [assignee] : []
 
   updated_files_distinct = updated_files.uniq { |updated_file| updated_file.path }
 
@@ -367,17 +366,18 @@ dependencies.select(&:top_level?).each do |dep|
         find { |cred| cred["host"] == source.hostname }
 
       auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}?api-version=6.0"
+      set_reviewers_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}/reviewers?api-version=6.0"
 
       @auth_header ||= auth_header_for(azure_credential&.fetch("token", nil))
 
       if assignees.count > 0
-        set_reviewers_content = {
-          reviewers: assignees.map { |reviewer| { id: reviewer } }
-        }
+        set_reviewers_content = assignees.map { |reviewer| {
+          id: reviewer,
+        } }
         set_reviewers_json = set_reviewers_content.to_json
 
-        response = Excon.patch(
-          auto_merge_url,
+        response = Excon.post(
+          set_reviewers_url,
           body: set_reviewers_json,
           user: azure_credential&.fetch("username", nil),
           password: azure_credential&.fetch("password", nil),
@@ -395,7 +395,12 @@ dependencies.select(&:top_level?).each do |dep|
         raise Dependabot::Clients::Azure::BadGateway if response.status == 502
         raise Dependabot::Clients::Azure::ServiceNotAvailable if response.status == 503
 
-        puts "reviewers set"
+        if response.status == 400
+          puts response.body
+        else
+          puts "reviewers set"
+        end
+
       end
 
       merge_commit_message = updated_deps.map { |d| "Updating #{d.name} (from #{d.previous_version} to #{d.version})" }.join('\n')
