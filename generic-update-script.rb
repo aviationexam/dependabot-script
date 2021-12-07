@@ -65,6 +65,11 @@ if ENV["IGNORE_DEPENDENCY"]
   ignore_dependency = ENV["IGNORE_DEPENDENCY"].split(",")
 end
 
+ignore_directory = []
+if ENV["IGNORE_DIRECTORY"]
+  ignore_directory = ENV["IGNORE_DIRECTORY"].split(";")
+end
+
 if ENV["ALTERNATIVE_NUGET_FEED"]
   alternative_token = nil
   unless ENV["ALTERNATIVE_NUGET_ACCESS_TOKEN"].nil?
@@ -220,6 +225,18 @@ fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
 
 files = fetcher.files
 commit = fetcher.commit
+
+ignore_directory.each do |d|
+  puts "Ignored directory: #{d}"
+
+  ignored_source = files.select { |file| file.name.include? d }
+
+  files = files.reject  { |file| file.name.include? d }
+
+  ignored_source.each do |i|
+    puts " - ignored source: #{i}"
+  end
+end
 
 ##############################
 # Parse the dependency files #
