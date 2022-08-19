@@ -3,4 +3,4 @@
 source "https://rubygems.org"
 
 gem "irb"
-gem "dependabot-omnibus", "~> 0.208.0"
+gem "dependabot-omnibus", "~> 0.209.0"
