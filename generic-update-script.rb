@@ -48,9 +48,8 @@ branch = ENV["BRANCH"]
 package_manager = ENV["PACKAGE_MANAGER"] || "bundler"
 
 # Expected to be a JSON object passed to the underlying components
-options = JSON.parse(ENV["OPTIONS"] || "{}", {:symbolize_names => true})
+options = JSON.parse(ENV["OPTIONS"] || "{}", { :symbolize_names => true })
 puts "Running with options: #{options}"
-
 
 provider_metadata = nil
 if ENV["AZURE_WORK_ITEM"]
@@ -231,7 +230,7 @@ ignore_directory.each do |d|
 
   ignored_source = files.select { |file| file.name.include? d }
 
-  files = files.reject  { |file| file.name.include? d }
+  files = files.reject { |file| file.name.include? d }
 
   ignored_source.each do |i|
     puts " - ignored source: #{i}"
@@ -263,6 +262,28 @@ def auth_header_for(token)
   else
     { "Authorization" => "Bearer #{token}" }
   end
+end
+
+def get_package_prefix(dependency)
+  if dependency.name.include? '.'
+    dependency.name.split('.').first
+  elsif dependency.name.include? '/'
+    dependency.name.split('/').first
+  else
+    dependency.name
+  end
+end
+
+def get_package_group_key(dependency)
+  "#{get_package_prefix(dependency)}/#{dependency.version}/#{dependency.previous_version}"
+end
+
+def get_packages_prefix(dependencies)
+  prefixes = dependencies.map { |dependency| get_package_group_key(dependency) }.uniq
+
+  raise Exception if prefixes.length > 1
+
+  prefixes.first
 end
 
 dependencies_to_update =
@@ -315,21 +336,20 @@ dependencies_to_update =
       }
     }
     .reject { |item| item[:requirements_to_unlock] == :update_not_possible }
-    .map { |item| {
-      updated_deps: item[:checker].updated_dependencies(
-        requirements_to_unlock: item[:requirements_to_unlock]
-      ),
-      dependency: item[:checker].dependency,
-    } }
+    .map { |item| item[:checker].updated_dependencies(
+      requirements_to_unlock: item[:requirements_to_unlock]
+    ) }
+    .group_by { |updated_deps| get_packages_prefix(updated_deps) }
 
-dependencies_to_update.each do |item|
-  updated_deps = item[:updated_deps]
-  dependency = item[:dependency]
+dependencies_to_update.each do |key, updated_deps|
+  updated_deps = updated_deps.flatten
+
+  branch_name = updated_deps.length > 1 ? key : nil
 
   #####################################
   # Generate updated dependency files #
   #####################################
-  updated_deps.dup.each do |d|
+  updated_deps.each do |d|
     puts "  - Updating #{d.name} (from #{d.previous_version} to #{d.version})…"
   end
 
@@ -364,6 +384,13 @@ dependencies_to_update.each do |item|
     label_language: true,
     provider_metadata: provider_metadata
   )
+
+  if branch_name != nil
+    branch_namer = pr_creator.send(:branch_namer)
+    branch_namer.new_branch_name
+    branch_namer.instance_variable_set('@name', branch_name)
+  end
+
   pull_request = pr_creator.create
 
   next unless pull_request
