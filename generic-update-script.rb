@@ -265,49 +265,66 @@ def auth_header_for(token)
   end
 end
 
-dependencies.select(&:top_level?).each do |dep|
-  if dep.version.start_with?('$')
-    puts "__ #{dep.name} - managed externally"
-    next
-  end
+dependencies_to_update =
+  dependencies
+    .select(&:top_level?)
+    .reject { |dep|
+      version_starts_with = dep.version.start_with?('$')
 
-  #########################################
-  # Get update details for the dependency #
-  #########################################
-  checker = Dependabot::UpdateCheckers.for_package_manager(package_manager).new(
-    dependency: dep,
-    dependency_files: files,
-    credentials: credentials,
-    options: options,
-  )
-
-  if checker.up_to_date?
-    puts "#{dep.name} (version #{dep.version}) - up to date"
-  end
-
-  if ignore_dependency.include? dep.name
-    puts "__ #{dep.name} (version #{dep.version}) - ignoring"
-
-    next
-  end
-
-  next if checker.up_to_date?
-
-  requirements_to_unlock =
-    if !checker.requirements_unlocked_or_can_be?
-      if checker.can_update?(requirements_to_unlock: :none) then :none
-      else :update_not_possible
+      if version_starts_with
+        puts "__ #{dep.name} - managed externally"
       end
-    elsif checker.can_update?(requirements_to_unlock: :own) then :own
-    elsif checker.can_update?(requirements_to_unlock: :all) then :all
-    else :update_not_possible
-    end
 
-  next if requirements_to_unlock == :update_not_possible
+      version_starts_with
+    }
+    #########################################
+    # Get update details for the dependency #
+    #########################################
+    .map { |dep| Dependabot::UpdateCheckers.for_package_manager(package_manager).new(
+      dependency: dep,
+      dependency_files: files,
+      credentials: credentials,
+      options: options,
+    ) }
+    .reject { |checker|
+      dep = checker.dependency
+      if checker.up_to_date?
+        puts "#{dep.name} (version #{dep.version}) - up to date"
+      end
 
-  updated_deps = checker.updated_dependencies(
-    requirements_to_unlock: requirements_to_unlock
-  )
+      if not checker.up_to_date? and ignore_dependency.include? dep.name
+        puts "__ #{dep.name} (version #{dep.version}) - ignoring"
+      end
+
+      (checker.up_to_date? or ignore_dependency.include? dep.name)
+    }
+    .map { |checker|
+      requirements_to_unlock =
+        if !checker.requirements_unlocked_or_can_be?
+          if checker.can_update?(requirements_to_unlock: :none) then :none
+          else :update_not_possible
+          end
+        elsif checker.can_update?(requirements_to_unlock: :own) then :own
+        elsif checker.can_update?(requirements_to_unlock: :all) then :all
+        else :update_not_possible
+        end
+
+      {
+        checker: checker,
+        requirements_to_unlock: requirements_to_unlock,
+      }
+    }
+    .reject { |item| item[:requirements_to_unlock] == :update_not_possible }
+    .map { |item| {
+      updated_deps: item[:checker].updated_dependencies(
+        requirements_to_unlock: item[:requirements_to_unlock]
+      ),
+      dependency: item[:checker].dependency,
+    } }
+
+dependencies_to_update.each do |item|
+  updated_deps = item[:updated_deps]
+  dependency = item[:dependency]
 
   #####################################
   # Generate updated dependency files #
@@ -315,6 +332,7 @@ dependencies.select(&:top_level?).each do |dep|
   updated_deps.dup.each do |d|
     puts "  - Updating #{d.name} (from #{d.previous_version} to #{d.version})…"
   end
+
   updater = Dependabot::FileUpdaters.for_package_manager(package_manager).new(
     dependencies: updated_deps,
     dependency_files: files,
@@ -322,7 +340,7 @@ dependencies.select(&:top_level?).each do |dep|
     options: options,
   )
 
-  updated_files = updater.updated_dependency_files
+  updated_files = updater.updated_dependency_files.uniq { |updated_file| updated_file.path }
 
   ########################################
   # Create a pull request for the update #
@@ -335,13 +353,11 @@ dependencies.select(&:top_level?).each do |dep|
     assignees = []
   end
 
-  updated_files_distinct = updated_files.uniq { |updated_file| updated_file.path }
-
   pr_creator = Dependabot::PullRequestCreator.new(
     source: source,
     base_commit: commit,
     dependencies: updated_deps,
-    files: updated_files_distinct,
+    files: updated_files,
     credentials: credentials,
     assignees: assignees,
     author_details: { name: "Dependabot", email: "no-reply@github.com" },
