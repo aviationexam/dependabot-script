@@ -102,6 +102,7 @@ GEM
       faraday-net_http (>= 2.0, < 3.1)
       ruby2_keywords (>= 0.0.4)
     faraday-net_http (3.0.0)
+    faraday-retry (1.0.3)
     ffi (1.15.5-x64-mingw32)
     gitlab (4.19.0)
       httparty (~> 0.20)
@@ -173,6 +174,7 @@ PLATFORMS
 
 DEPENDENCIES
   dependabot-omnibus (~> 0.212.0)
+  faraday-retry
   irb
 
 BUNDLED WITH
