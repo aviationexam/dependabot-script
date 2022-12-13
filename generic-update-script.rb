@@ -278,14 +278,6 @@ def get_package_group_key(dependency)
   "#{get_package_prefix(dependency)}/#{dependency.version}/#{dependency.previous_version}"
 end
 
-def get_packages_prefix(dependencies)
-  prefixes = dependencies.map { |dependency| get_package_group_key(dependency) }.uniq
-
-  raise Exception if prefixes.length > 1
-
-  prefixes.first
-end
-
 dependencies_to_update =
   dependencies
     .select(&:top_level?)
@@ -336,13 +328,20 @@ dependencies_to_update =
       }
     }
     .reject { |item| item[:requirements_to_unlock] == :update_not_possible }
-    .map { |item| item[:checker].updated_dependencies(
-      requirements_to_unlock: item[:requirements_to_unlock]
-    ) }
-    .group_by { |updated_deps| get_packages_prefix(updated_deps) }
+    .map { |item|
+      updated_deps = item[:checker].updated_dependencies(
+        requirements_to_unlock: item[:requirements_to_unlock]
+      )
 
-dependencies_to_update.each do |key, updated_deps|
-  updated_deps = updated_deps.flatten
+      {
+        checker: item[:checker],
+        updated_deps: updated_deps,
+      }
+    }
+    .group_by { |item| get_package_group_key(item[:checker].dependency) }
+
+dependencies_to_update.each do |key, items|
+  updated_deps = items.map { |item| item[:updated_deps] }.flatten
 
   branch_name = updated_deps.length > 1 ? key : nil
 
