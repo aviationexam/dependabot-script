@@ -385,6 +385,8 @@ dependencies_to_update.each do |key, items|
   )
 
   if branch_name != nil
+    branch_name = branch_name.sub("@", "")
+
     branch_namer = pr_creator.send(:branch_namer)
     branch_namer.new_branch_name
     branch_namer.instance_variable_set('@name', branch_name)
