@@ -293,14 +293,6 @@ dependencies_to_update =
       else
         false
       end
-
-      version_starts_with = dep.version.start_with?('$')
-
-      if version_starts_with
-        puts "__ #{dep.name} - managed externally"
-      end
-
-      version_starts_with
     }
     #########################################
     # Get update details for the dependency #
