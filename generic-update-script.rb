@@ -282,6 +282,12 @@ dependencies_to_update =
   dependencies
     .select(&:top_level?)
     .reject { |dep|
+      if dep.version == nil
+        puts "__ #{dep.name} - managed in submodule"
+
+        false
+      end
+
       version_starts_with = dep.version.start_with?('$')
 
       if version_starts_with
