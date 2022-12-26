@@ -285,6 +285,12 @@ dependencies_to_update =
       if dep.version == nil
         puts "__ #{dep.name} - managed in submodule"
 
+        true
+      elsif dep.version.start_with?('$')
+        puts "__ #{dep.name} - managed externally"
+
+        true
+      else
         false
       end
 
