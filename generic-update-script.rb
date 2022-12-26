@@ -342,7 +342,13 @@ dependencies_to_update =
         updated_deps: updated_deps,
       }
     }
-    .group_by { |item| get_package_group_key(item[:checker].dependency) }
+    .group_by { |item|
+      updated_deps = item[:updated_deps]
+      name = item[:checker].dependency.name
+      dep = updated_deps.reject { |item| item.name != name }.first
+
+      get_package_group_key(dep)
+    }
 
 dependencies_to_update.each do |key, items|
   updated_deps = items.map { |item| item[:updated_deps] }.flatten
