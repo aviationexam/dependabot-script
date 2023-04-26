@@ -318,6 +318,7 @@ dependencies_to_update =
     .map { |checker|
       requirements_to_unlock =
         if !checker.requirements_unlocked_or_can_be?
+          #noinspection RubyThenInMultilineConditionalInspection
           if checker.can_update?(requirements_to_unlock: :none) then :none
           else :update_not_possible
           end
@@ -345,7 +346,7 @@ dependencies_to_update =
     .group_by { |item|
       updated_deps = item[:updated_deps]
       name = item[:checker].dependency.name
-      dep = updated_deps.reject { |item| item.name != name }.first
+      dep = updated_deps.reject { |d| d.name != name }.first
 
       get_package_group_key(dep)
     }
@@ -420,6 +421,7 @@ dependencies_to_update.each do |key, items|
     )
     g.accept_merge_request(
       source.repo,
+      #noinspection RubyResolve
       pull_request.iid,
       merge_when_pipeline_succeeds: true,
       should_remove_source_branch: true
