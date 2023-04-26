@@ -354,7 +354,11 @@ dependencies_to_update =
 dependencies_to_update.each do |key, items|
   updated_deps = items.map { |item| item[:updated_deps] }.flatten
 
-  branch_name = updated_deps.length > 1 ? key : nil
+  if updated_deps.length > 1
+    dependency_group = Dependabot::DependencyGroup.new(name: "#{key}", rules: ["#{key}*"])
+  else
+    dependency_group = nil
+  end
 
   #####################################
   # Generate updated dependency files #
@@ -389,6 +393,7 @@ dependencies_to_update.each do |key, items|
     source: source,
     base_commit: commit,
     dependencies: updated_deps,
+    dependency_group: dependency_group,
     files: updated_files,
     credentials: credentials,
     reviewers: reviewers,
@@ -397,14 +402,6 @@ dependencies_to_update.each do |key, items|
     label_language: true,
     provider_metadata: provider_metadata
   )
-
-  if branch_name != nil
-    branch_name = branch_name.sub("@", "")
-
-    branch_namer = pr_creator.send(:branch_namer)
-    branch_namer.new_branch_name
-    branch_namer.instance_variable_set('@name', branch_name)
-  end
 
   pull_request = pr_creator.create
 
