@@ -9,6 +9,10 @@ ENV DEPENDABOT_NATIVE_HELPERS_PATH="${CODE_DIR}/native-helpers"
 ENV PATH="${PATH}:${DEPENDABOT_NATIVE_HELPERS_PATH}/terraform/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/python/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/go_modules/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/dep/bin"
 ENV MIX_HOME="${DEPENDABOT_NATIVE_HELPERS_PATH}/hex/mix"
 
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
+    apt install --no-install-recommends -y nodejs && \
+    apt clean
+
 RUN bundle config set --local path "vendor" \
   && bundle install --jobs 4 --retry 3
 
