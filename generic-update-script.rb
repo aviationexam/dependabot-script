@@ -416,9 +416,9 @@ dependencies_to_update.each do |key, items|
       endpoint: source.api_endpoint,
       private_token: ENV["GITLAB_ACCESS_TOKEN"]
     )
+    #noinspection RubyResolve
     g.accept_merge_request(
       source.repo,
-      #noinspection RubyResolve
       pull_request.iid,
       merge_when_pipeline_succeeds: true,
       should_remove_source_branch: true
