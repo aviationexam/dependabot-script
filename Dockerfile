@@ -15,7 +15,7 @@ RUN bundle config set --local path "vendor" \
 COPY --chown=dependabot:dependabot . ${CODE_DIR}
 
 RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/{terraform,python,dep,go_modules,hex,composer,npm_and_yarn} && \
-    cp -r $(bundle show dependabot-npm_and_yarn)/helpers ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn/helpers && \
+    cp -r $(bundle info --path dependabot-npm_and_yarn)/helpers ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn/helpers && \
     ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn/helpers/build ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn
 
 ENTRYPOINT ["bundle", "exec", "ruby", "./generic-update-script.rb"]
