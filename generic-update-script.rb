@@ -374,12 +374,14 @@ dependencies_to_update.each do |key, items|
   ########################################
   # Create a pull request for the update #
   ########################################
+  assignees = []
+
   if ENV["PULL_REQUESTS_ASSIGNEE"]
-    assignees = [ENV["PULL_REQUESTS_ASSIGNEE"]&.to_s]
+    reviewers = [ENV["PULL_REQUESTS_ASSIGNEE"]&.to_s]
   elsif ENV["GITLAB_ASSIGNEE_ID"]
-    assignees = [ENV["GITLAB_ASSIGNEE_ID"]&.to_i]
+    reviewers = [ENV["GITLAB_ASSIGNEE_ID"]&.to_i]
   else
-    assignees = []
+    reviewers = []
   end
 
   pr_creator = Dependabot::PullRequestCreator.new(
@@ -388,6 +390,7 @@ dependencies_to_update.each do |key, items|
     dependencies: updated_deps,
     files: updated_files,
     credentials: credentials,
+    reviewers: reviewers,
     assignees: assignees,
     author_details: { name: "Dependabot", email: "no-reply@github.com" },
     label_language: true,
