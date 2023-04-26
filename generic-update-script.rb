@@ -435,87 +435,27 @@ dependencies_to_update.each do |key, items|
     rescue KeyError
       puts "Unexpected PR response #{pull_request.body}"
     else
-      puts pull_request_id
-
-      azure_credential = credentials.
-        select { |cred| cred["type"] == "git_source" }.
-        find { |cred| cred["host"] == source.hostname }
-
-      auto_merge_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}?api-version=6.0"
-      set_reviewers_url = "https://dev.azure.com/aviationexam/#{source.project}/_apis/git/repositories/#{source.unscoped_repo}/pullrequests/#{pull_request_id}/reviewers?api-version=6.0"
-
-      @auth_header ||= auth_header_for(azure_credential&.fetch("token", nil))
-
-      if assignees.count > 0
-        set_reviewers_content = assignees.map { |reviewer| {
-          id: reviewer,
-        } }
-        set_reviewers_json = set_reviewers_content.to_json
-
-        response = Excon.post(
-          set_reviewers_url,
-          body: set_reviewers_json,
-          user: azure_credential&.fetch("username", nil),
-          password: azure_credential&.fetch("password", nil),
-          idempotent: true,
-          **Dependabot::SharedHelpers.excon_defaults(
-            headers: @auth_header.merge(
-              {
-                "Content-Type" => "application/json"
-              }
-            )
-          )
-        )
-
-        raise Dependabot::Clients::Azure::InternalServerError if response.status == 500
-        raise Dependabot::Clients::Azure::BadGateway if response.status == 502
-        raise Dependabot::Clients::Azure::ServiceNotAvailable if response.status == 503
-
-        if response.status == 400
-          puts response.body
-        else
-          puts "reviewers set"
-        end
-
-      end
+      puts "  autocomplete PR #{pull_request_id}"
 
       merge_commit_message = updated_deps.map { |d| "Updating #{d.name} (from #{d.previous_version} to #{d.version})" }.join('\n')
 
-      set_autocompletion_content = {
-        autoCompleteSetBy: {
-          id: "#{azure_autocomplete_by}"
-        },
-        completionOptions: {
-          mergeCommitMessage: merge_commit_message,
-          deleteSourceBranch: true,
-          squashMerge: true,
-          mergeStrategy: "squash",
-          transitionWorkItems: false,
-          autoCompleteIgnoreConfigIds: []
-        }
-      }
-
-      set_autocompletion_json = set_autocompletion_content.to_json
-      response = Excon.patch(
-        auto_merge_url,
-        body: set_autocompletion_json,
-        user: azure_credential&.fetch("username", nil),
-        password: azure_credential&.fetch("password", nil),
-        idempotent: true,
-        **Dependabot::SharedHelpers.excon_defaults(
-          headers: @auth_header.merge(
-            {
-              "Content-Type" => "application/json"
-            }
-          )
-        )
+      azure_client = Dependabot::Clients::Azure.for_source(
+        source: source,
+        credentials: credentials
       )
 
-      raise Dependabot::Clients::Azure::InternalServerError if response.status == 500
-      raise Dependabot::Clients::Azure::BadGateway if response.status == 502
-      raise Dependabot::Clients::Azure::ServiceNotAvailable if response.status == 503
+      azure_client.autocomplete_pull_request(
+        pull_request_id,
+        azure_autocomplete_by,
+        merge_commit_message,
+        delete_source_branch = true,
+        squash_merge = true,
+        merge_strategy = "squash",
+        trans_work_items = true,
+        ignore_config_ids = []
+      )
 
-      puts "autocompletion set"
+      puts "  autocompletion set"
     end
   end
 end
