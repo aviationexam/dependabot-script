@@ -347,25 +347,31 @@ dependencies_to_update =
       updated_deps = item[:checker].updated_dependencies(
         requirements_to_unlock: item[:requirements_to_unlock]
       )
+      name = item[:checker].dependency.name
+      primary_dep = updated_deps.reject { |d| d.name != name }.first
 
       {
         checker: item[:checker],
         updated_deps: updated_deps,
+        primary_dep: primary_dep,
+        version_postfix: "#{primary_dep.version}/#{primary_dep.previous_version}"
       }
     }
     .group_by { |item|
-      updated_deps = item[:updated_deps]
-      name = item[:checker].dependency.name
-      dep = updated_deps.reject { |d| d.name != name }.first
+      dep = item[:primary_dep]
+      version_postfix = item[:version_postfix]
 
-      get_package_group_key(dep)
+      "#{get_package_prefix(dep)}/#{version_postfix}"
     }
 
 dependencies_to_update.each do |key, items|
   updated_deps = items.map { |item| item[:updated_deps] }.flatten
 
   if updated_deps.length > 1
-    dependency_group = Dependabot::DependencyGroup.new(name: "#{key}", rules: ["#{key}*"])
+    updated_dep_names = items.map { |item| item[:primary_dep].name }.flatten
+    version_postfix = items.map { |item| item[:version_postfix] }.first
+    lcs = longest_common_substr(updated_dep_names).chomp('.')
+    dependency_group = Dependabot::DependencyGroup.new(name: "#{lcs}/#{version_postfix}", rules: ["#{key}*"])
   else
     dependency_group = nil
   end
@@ -416,7 +422,7 @@ dependencies_to_update.each do |key, items|
   if dependency_group != nil
     branch_namer = pr_creator.send(:branch_namer)
 
-    branch_name_strategy = CustomDependencyGroupStrategy.new(
+    branch_name_strategy = Dependabot::PullRequestCreator::BranchNamer::CustomDependencyGroupStrategy.new(
       dependencies: pr_creator.dependencies,
       files: pr_creator.files,
       target_branch: pr_creator.source.branch,
@@ -426,6 +432,8 @@ dependencies_to_update.each do |key, items|
       max_length: pr_creator.branch_name_max_length
     )
     branch_namer.instance_variable_set('@strategy', branch_name_strategy)
+
+    puts "  branch: #{branch_name_strategy.new_branch_name}"
   end
 
   pull_request = pr_creator.create
