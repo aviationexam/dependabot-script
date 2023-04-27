@@ -277,8 +277,15 @@ def get_package_prefix(dependency)
   end
 end
 
-def get_package_group_key(dependency)
-  "#{get_package_prefix(dependency)}/#{dependency.version}/#{dependency.previous_version}"
+def longest_common_substr(strings)
+  shortest = strings.min_by &:length
+  maxlen = shortest.length
+  maxlen.downto(0) do |len|
+    0.upto(maxlen - len) do |start|
+      substr = shortest[start,len]
+      return substr if strings.all?{|str| str.include? substr }
+    end
+  end
 end
 
 dependencies_to_update =
