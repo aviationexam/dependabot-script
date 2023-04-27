@@ -1,6 +1,7 @@
 # This script is designed to loop through all dependencies in a GHE, GitLab or
 # Azure DevOps project, creating PRs where necessary.
 
+require "./custom_dependency_group_strategy.rb"
 require "dependabot/file_fetchers"
 require "dependabot/file_parsers"
 require "dependabot/update_checkers"
@@ -404,6 +405,21 @@ dependencies_to_update.each do |key, items|
     label_language: true,
     provider_metadata: provider_metadata
   )
+
+  if dependency_group != nil
+    branch_namer = pr_creator.send(:branch_namer)
+
+    branch_name_strategy = CustomDependencyGroupStrategy.new(
+      dependencies: pr_creator.dependencies,
+      files: pr_creator.files,
+      target_branch: pr_creator.source.branch,
+      dependency_group: pr_creator.dependency_group,
+      separator: pr_creator.branch_name_separator,
+      prefix: pr_creator.branch_name_prefix,
+      max_length: pr_creator.branch_name_max_length
+    )
+    branch_namer.instance_variable_set('@strategy', branch_name_strategy)
+  end
 
   pull_request = pr_creator.create
 
