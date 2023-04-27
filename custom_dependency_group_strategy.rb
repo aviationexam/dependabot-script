@@ -21,7 +21,7 @@ module Dependabot
         # fixed-length name, so we can punt on handling truncation until
         # we determine the strict validation rules for names
         def new_branch_name
-          File.join(prefixes, dependency_group.name).gsub("/", separator)
+          File.join(prefixes, [dependency_group.name]).gsub("/", separator)
         end
 
         private
