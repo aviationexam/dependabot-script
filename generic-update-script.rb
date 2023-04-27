@@ -11,6 +11,8 @@ require "dependabot/clients/azure"
 require "gitlab"
 require "json"
 
+$stdout.sync = true
+
 credentials = [
   {
     "type" => "git_source",
