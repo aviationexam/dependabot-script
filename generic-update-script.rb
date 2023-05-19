@@ -396,13 +396,12 @@ dependencies_to_update.each do |key, items|
   # Create a pull request for the update #
   ########################################
   assignees = []
+  reviewers = []
 
   if ENV["PULL_REQUESTS_ASSIGNEE"]
-    reviewers = [ENV["PULL_REQUESTS_ASSIGNEE"]&.to_s]
+    assignees = ENV["PULL_REQUESTS_ASSIGNEE"].split(",")
   elsif ENV["GITLAB_ASSIGNEE_ID"]
-    reviewers = [ENV["GITLAB_ASSIGNEE_ID"]&.to_i]
-  else
-    reviewers = []
+    assignees = ENV["GITLAB_ASSIGNEE_ID"].split(",").map(&:to_i)
   end
 
   pr_creator = Dependabot::PullRequestCreator.new(
