@@ -93,6 +93,22 @@ if ENV["NUGET_ACCESS_TOKEN"] && ENV["NUGET_FEED"]
   }
 end
 
+if ENV["PACKAGE_MANAGER"] == "gradle"
+  credentials << {
+    "type" => "maven_repository",
+    "url" => "https://repo1.maven.org/maven2/",
+  }
+end
+
+if ENV["GRADLE_ACCESS_TOKEN"] && ENV["GRADLE_FEED"]
+  credentials << {
+    "type" => "maven_repository",
+    "url" => ENV["GRADLE_FEED"],
+    "username" => "aviationexam",
+    "password" => "#{ENV["GRADLE_ACCESS_TOKEN"]}"
+  }
+end
+
 if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
   credentials << {
     "type" => "npm_registry",
