@@ -1,4 +1,4 @@
-FROM ghcr.io/dependabot/dependabot-updater-core:0.224.0
+FROM ghcr.io/dependabot/dependabot-updater-core:0.225.0
 
 ARG CODE_DIR=/home/dependabot/dependabot-script
 RUN mkdir -p ${CODE_DIR}
