@@ -388,7 +388,10 @@ dependencies_to_update.each do |key, items|
     updated_dep_names = items.map { |item| item[:primary_dep].name }.flatten
     version_postfix = items.map { |item| item[:version_postfix] }.first
     lcs = longest_common_substr(updated_dep_names).chomp('.')
-    dependency_group = Dependabot::DependencyGroup.new(name: "#{lcs}/#{version_postfix}", rules: ["#{key}*"])
+
+    rules = Hash.new
+    rules[key] = ["#{key}*"]
+    dependency_group = Dependabot::DependencyGroup.new(name: "#{lcs}/#{version_postfix}", rules: rules)
   else
     dependency_group = nil
   end
