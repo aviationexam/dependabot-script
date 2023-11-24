@@ -2,7 +2,7 @@
 # Azure DevOps project, creating PRs where necessary.
 
 require "./custom_dependency_group_strategy.rb"
-require "./custom_gradle_update_chacker.rb"
+require "./custom_gradle_update_checker.rb"
 require "dependabot/file_fetchers"
 require "dependabot/file_parsers"
 require "dependabot/update_checkers"
