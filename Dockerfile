@@ -5,21 +5,70 @@ RUN mkdir -p ${CODE_DIR}
 COPY --chown=dependabot:dependabot Gemfile Gemfile.lock ${CODE_DIR}/
 WORKDIR ${CODE_DIR}
 
-ENV DEPENDABOT_NATIVE_HELPERS_PATH="${CODE_DIR}/native-helpers"
-ENV PATH="${PATH}:${DEPENDABOT_NATIVE_HELPERS_PATH}/terraform/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/python/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/go_modules/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/dep/bin"
-ENV MIX_HOME="${DEPENDABOT_NATIVE_HELPERS_PATH}/hex/mix"
+# Install .NET SDK
+ARG DOTNET_SDK_VERSION=8.0.100
+ARG DOTNET_SDK_INSTALL_URL=https://dot.net/v1/dotnet-install.sh
+ENV DOTNET_INSTALL_DIR=/usr/local/dotnet/current
+ENV DOTNET_NOLOGO=true
+ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
-    apt install --no-install-recommends -y nodejs && \
-    apt clean
+# See https://github.com/nodesource/distributions#installation-instructions
+ARG NODEJS_VERSION=18.x
+
+# Check for updates at https://github.com/npm/cli/releases
+# This version should be compatible with the Node.js version declared above. See https://nodejs.org/en/download/releases as well
+# TODO: Upgrade to 9.6.7 depending on the outcome of https://github.com/npm/cli/issues/6742
+ARG NPM_VERSION=9.6.5
+
+# Check for updates at https://github.com/yarnpkg/berry/releases
+ARG YARN_VERSION=3.7.0
+
+ENV DEPENDABOT_NATIVE_HELPERS_PATH="/opt"
+ENV PATH="${PATH}:${DEPENDABOT_NATIVE_HELPERS_PATH}/terraform/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/python/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/go_modules/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/dep/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/bin"
+ENV MIX_HOME="${DEPENDABOT_NATIVE_HELPERS_PATH}/hex/mix"
+ENV NUGET_SCRATCH="${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/tmp"
+
+# Install .NET SDK dependencies
+RUN apt update && \
+  apt install -y --no-install-recommends libicu-dev=70.1-2 && \
+  rm -rf /var/lib/apt/lists/*
+
+RUN cd /tmp \
+  && curl --location --output dotnet-install.sh "${DOTNET_SDK_INSTALL_URL}" \
+  && chmod +x dotnet-install.sh \
+  && mkdir -p "${DOTNET_INSTALL_DIR}" \
+  && ./dotnet-install.sh --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" \
+  && rm dotnet-install.sh
+
+# Install Node and npm
+RUN mkdir -p /etc/apt/keyrings \
+  && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODEJS_VERSION nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  nodejs \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install -g npm@$NPM_VERSION \
+  && rm -rf ~/.npm
+
+# Install yarn berry and set it to a stable version
+RUN corepack prepare yarn@$YARN_VERSION --activate
 
 RUN bundle config set --local path "vendor" \
   && bundle install --jobs 4 --retry 3
 
 COPY --chown=dependabot:dependabot . ${CODE_DIR}
 
-RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/{terraform,python,dep,go_modules,hex,composer,npm_and_yarn} && \
+RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn && \
     cp -r $(bundle info --path dependabot-npm_and_yarn)/helpers ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn/helpers && \
-    ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn/helpers/build ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn
+    bash ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn/helpers/build
+
+RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget && \
+    export NUGET_HELPERS=$(bundle info --path dependabot-nuget)/helpers; echo "${NUGET_HELPERS}" && \
+    [[ -d $NUGET_HELPERS ]] && \
+    ( \
+      cp -r ${NUGET_HELPERS} ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers && \
+      bash ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/build \
+    ) || (echo "${NUGET_HELPERS} is not present" && ls -la "${NUGET_HELPERS}" || exit 0)
 
 ENTRYPOINT ["bundle", "exec", "ruby", "./generic-update-script.rb"]
