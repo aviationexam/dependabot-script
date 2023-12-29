@@ -2,8 +2,6 @@ FROM ghcr.io/dependabot/dependabot-updater-core:0.239.0
 
 ARG CODE_DIR=/home/dependabot/dependabot-script
 RUN mkdir -p ${CODE_DIR}
-COPY --chown=dependabot:dependabot Gemfile Gemfile.lock ${CODE_DIR}/
-WORKDIR ${CODE_DIR}
 
 # Install .NET SDK
 ARG DOTNET_SDK_VERSION=8.0.100
@@ -53,6 +51,9 @@ RUN mkdir -p /etc/apt/keyrings \
 
 # Install yarn berry and set it to a stable version
 RUN corepack prepare yarn@$YARN_VERSION --activate
+
+COPY --chown=dependabot:dependabot Gemfile Gemfile.lock ${CODE_DIR}/
+WORKDIR ${CODE_DIR}
 
 RUN bundle config set --local path "vendor" \
   && bundle install --jobs 4 --retry 3
