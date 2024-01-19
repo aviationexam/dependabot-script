@@ -65,11 +65,7 @@ RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn && \
     bash ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn/helpers/build
 
 RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget && \
-    export NUGET_HELPERS=$(bundle info --path dependabot-nuget)/helpers; echo "${NUGET_HELPERS}" && \
-    [[ -d $NUGET_HELPERS ]] && \
-    ( \
-      cp -r ${NUGET_HELPERS} ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers && \
-      bash ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/build \
-    ) || (echo "${NUGET_HELPERS} is not present" && ls -la "${NUGET_HELPERS}" || exit 0)
+    cp -r $(bundle info --path dependabot-nuget)/helpers ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers && \
+    bash ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/build
 
 ENTRYPOINT ["bundle", "exec", "ruby", "./generic-update-script.rb"]
