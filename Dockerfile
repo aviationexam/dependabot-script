@@ -8,7 +8,9 @@ ARG DOTNET_SDK_VERSION=8.0.101
 ARG DOTNET_SDK_INSTALL_URL=https://dot.net/v1/dotnet-install.sh
 ENV DOTNET_INSTALL_DIR=/usr/local/dotnet/current
 ENV DOTNET_NOLOGO=true
+ENV DOTNET_ROOT="${DOTNET_INSTALL_DIR}"
 ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
+ENV DOTNET_NUGET_CLIENT_REVISION=993ad4e
 
 # See https://github.com/nodesource/distributions#installation-instructions
 ARG NODEJS_VERSION=18.x
@@ -22,7 +24,7 @@ ARG NPM_VERSION=9.6.5
 ARG YARN_VERSION=3.7.0
 
 ENV DEPENDABOT_NATIVE_HELPERS_PATH="/opt"
-ENV PATH="${PATH}:${DEPENDABOT_NATIVE_HELPERS_PATH}/terraform/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/python/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/go_modules/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/dep/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/bin"
+ENV PATH="${PATH}:${DEPENDABOT_NATIVE_HELPERS_PATH}/terraform/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/python/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/go_modules/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/dep/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/bin:${DOTNET_INSTALL_DIR}"
 ENV MIX_HOME="${DEPENDABOT_NATIVE_HELPERS_PATH}/hex/mix"
 ENV NUGET_SCRATCH="${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/tmp"
 
@@ -37,6 +39,9 @@ RUN cd /tmp \
   && mkdir -p "${DOTNET_INSTALL_DIR}" \
   && ./dotnet-install.sh --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" \
   && rm dotnet-install.sh
+
+RUN dotnet --list-runtimes
+RUN dotnet --list-sdks
 
 # Install Node and npm
 RUN mkdir -p /etc/apt/keyrings \
@@ -66,6 +71,12 @@ RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/npm_and_yarn && \
 
 RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget && \
     cp -r $(bundle info --path dependabot-nuget)/helpers ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers && \
+    cd ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/lib && \
+    git clone https://github.com/NuGet/NuGet.Client.git NuGet.Client && \
+    cd NuGet.Client && \
+    git checkout ${DOTNET_NUGET_CLIENT_REVISION} && \
+    ls -la ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers && \
+    cat ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/build && \
     bash ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/build
 
 ENTRYPOINT ["bundle", "exec", "ruby", "./generic-update-script.rb"]
