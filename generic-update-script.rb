@@ -234,6 +234,11 @@ ignore_dependency.each do |d|
   puts "Ignored dependency: #{d}"
 end
 
+always_clone = Dependabot::Utils
+                 .always_clone_for_package_manager?(package_manager)
+vendor_dependencies = options[:vendor_dependencies]
+repo_contents_path = File.expand_path(File.join("tmp", repo_name.split("/"))) if vendor_dependencies || always_clone
+
 ##############################
 # Fetch the dependency files #
 ##############################
@@ -241,6 +246,7 @@ puts "Fetching #{package_manager} dependency files for #{repo_name}"
 fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
   source: source,
   credentials: credentials,
+  repo_contents_path: repo_contents_path,
   options: options,
 )
 
@@ -265,6 +271,7 @@ end
 puts "Parsing dependencies information"
 parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
   dependency_files: files,
+  repo_contents_path: repo_contents_path,
   source: source,
   credentials: credentials,
   options: options,
@@ -331,6 +338,7 @@ dependencies_to_update =
       dependency: dep,
       dependency_files: files,
       credentials: credentials,
+      repo_contents_path: repo_contents_path,
       options: options,
     ) }
     .reject { |checker|
@@ -409,6 +417,7 @@ dependencies_to_update.each do |key, items|
   updater = Dependabot::FileUpdaters.for_package_manager(package_manager).new(
     dependencies: updated_deps,
     dependency_files: files,
+    repo_contents_path: repo_contents_path,
     credentials: credentials,
     options: options,
   )
