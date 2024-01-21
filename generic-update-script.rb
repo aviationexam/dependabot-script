@@ -3,6 +3,8 @@
 
 require "./custom_dependency_group_strategy.rb"
 require "./custom_gradle_update_checker.rb"
+require "./custom_nuget_project_file_parser.rb"
+require "./custom_nuget_update_checker.rb"
 require "dependabot/file_fetchers"
 require "dependabot/file_parsers"
 require "dependabot/update_checkers"
@@ -308,6 +310,7 @@ end
 dependencies_to_update =
   dependencies
     .select(&:top_level?)
+    .sort_by { |dep| dep.name }
     .reject { |dep|
       if dep.version == nil
         puts "__ #{dep.name} - managed in submodule"
