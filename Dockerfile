@@ -10,7 +10,7 @@ ENV DOTNET_INSTALL_DIR=/usr/local/dotnet/current
 ENV DOTNET_NOLOGO=true
 ENV DOTNET_ROOT="${DOTNET_INSTALL_DIR}"
 ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
-ENV DOTNET_NUGET_CLIENT_REVISION=993ad4e
+ENV DOTNET_NUGET_CLIENT_REVISION=dev
 
 # See https://github.com/nodesource/distributions#installation-instructions
 ARG NODEJS_VERSION=18.x
