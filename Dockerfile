@@ -39,7 +39,7 @@ RUN cd /tmp && \
     mkdir -p "${DOTNET_INSTALL_DIR}" && \
     ./dotnet-install.sh --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
     rm dotnet-install.sh && \
-    wget -qO- https://aka.ms/install-artifacts-credprovider.sh | bash
+    sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
 
 RUN dotnet --list-runtimes
 RUN dotnet --list-sdks
