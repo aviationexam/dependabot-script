@@ -457,7 +457,7 @@ dependencies_to_update.each do |key, items|
     branch_name_strategy = Dependabot::PullRequestCreator::BranchNamer::CustomDependencyGroupStrategy.new(
       dependencies: pr_creator.dependencies,
       files: pr_creator.files,
-      target_branch: pr_creator.target_branch,
+      target_branch: pr_creator.source.branch,
       dependency_group: pr_creator.dependency_group,
       includes_security_fixes: pr_creator.includes_security_fixes,
       separator: pr_creator.separator,
