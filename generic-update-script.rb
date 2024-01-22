@@ -457,11 +457,12 @@ dependencies_to_update.each do |key, items|
     branch_name_strategy = Dependabot::PullRequestCreator::BranchNamer::CustomDependencyGroupStrategy.new(
       dependencies: pr_creator.dependencies,
       files: pr_creator.files,
-      target_branch: pr_creator.source.branch,
+      target_branch: pr_creator.target_branch,
       dependency_group: pr_creator.dependency_group,
-      separator: pr_creator.branch_name_separator,
-      prefix: pr_creator.branch_name_prefix,
-      max_length: pr_creator.branch_name_max_length
+      includes_security_fixes: pr_creator.includes_security_fixes,
+      separator: pr_creator.separator,
+      prefix: pr_creator.prefix,
+      max_length: pr_creator.max_length,
     )
     branch_namer.instance_variable_set('@strategy', branch_name_strategy)
 
