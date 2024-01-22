@@ -453,16 +453,17 @@ dependencies_to_update.each do |key, items|
 
   if dependency_group != nil
     branch_namer = pr_creator.send(:branch_namer)
+    pr_creator_branch_namer_strategy = branch_namer.send(:strategy)
 
     branch_name_strategy = Dependabot::PullRequestCreator::BranchNamer::CustomDependencyGroupStrategy.new(
-      dependencies: pr_creator.dependencies,
-      files: pr_creator.files,
-      target_branch: pr_creator.source.branch,
+      dependencies: pr_creator_branch_namer_strategy.dependencies,
+      files: pr_creator_branch_namer_strategy.files,
+      target_branch: pr_creator_branch_namer_strategy.target_branch,
       dependency_group: pr_creator.dependency_group,
-      includes_security_fixes: pr_creator.includes_security_fixes,
-      separator: pr_creator.separator,
-      prefix: pr_creator.prefix,
-      max_length: pr_creator.max_length,
+      includes_security_fixes: branch_namer.includes_security_fixes,
+      separator: pr_creator_branch_namer_strategy.separator,
+      prefix: pr_creator_branch_namer_strategy.prefix,
+      max_length: pr_creator_branch_namer_strategy.max_length,
     )
     branch_namer.instance_variable_set('@strategy', branch_name_strategy)
 
