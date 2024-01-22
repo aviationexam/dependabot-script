@@ -33,12 +33,13 @@ RUN apt update && \
   apt install -y --no-install-recommends libicu-dev=70.1-2 && \
   rm -rf /var/lib/apt/lists/*
 
-RUN cd /tmp \
-  && curl --location --output dotnet-install.sh "${DOTNET_SDK_INSTALL_URL}" \
-  && chmod +x dotnet-install.sh \
-  && mkdir -p "${DOTNET_INSTALL_DIR}" \
-  && ./dotnet-install.sh --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" \
-  && rm dotnet-install.sh
+RUN cd /tmp && \
+    curl --location --output dotnet-install.sh "${DOTNET_SDK_INSTALL_URL}" && \
+    chmod +x dotnet-install.sh && \
+    mkdir -p "${DOTNET_INSTALL_DIR}" && \
+    ./dotnet-install.sh --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
+    rm dotnet-install.sh && \
+    wget -qO- https://aka.ms/install-artifacts-credprovider.sh | bash
 
 RUN dotnet --list-runtimes
 RUN dotnet --list-sdks
