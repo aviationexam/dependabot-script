@@ -54,48 +54,6 @@ module Dependabot
           dependency_set
         end
 
-        def build_dependency(name, req, version, prop_name, project_file, dev: false, max_version: nil)
-          return unless name
-
-          # Exclude any dependencies specified using interpolation
-          return if [name, req, version].any? { |s| s&.include?("%(") }
-
-          requirement = {
-            requirement: req,
-            file: project_file.name,
-            groups: [dev ? "devDependencies" : "dependencies"],
-            source: nil
-          }
-
-          if prop_name
-            # Get the root property name unless no details could be found,
-            # in which case use the top-level name to ease debugging
-            root_prop_name = details_for_property(prop_name, project_file)
-                               &.fetch(:root_property_name) || prop_name
-            requirement[:metadata] = { property_name: root_prop_name }
-          end
-
-          if max_version != nil
-            if requirement[:metadata] == nil
-              requirement[:metadata] = {}
-            end
-
-            requirement[:metadata][:max_version] = Version.new(max_version)
-          end
-
-          dependency = Dependency.new(
-            name: name,
-            version: version,
-            package_manager: "nuget",
-            requirements: [requirement]
-          )
-
-          # only include dependency if one of the sources has it
-          return unless dependency_has_search_results?(dependency)
-
-          dependency
-        end
-
         def get_node_max_version_value(node)
           get_attribute_value(node, "MaxVersion")
         end
