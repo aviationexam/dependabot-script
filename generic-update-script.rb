@@ -425,6 +425,8 @@ dependencies_to_update.each do |key, items|
 
   updated_files = updater.updated_dependency_files.uniq { |updated_file| updated_file.path }
 
+  next unless updated_files.any?
+
   ########################################
   # Create a pull request for the update #
   ########################################
