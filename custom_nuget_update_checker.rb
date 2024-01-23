@@ -16,7 +16,8 @@ module Dependabot
             credentials: credentials,
             ignored_versions: ignored_versions,
             raise_on_ignored: @raise_on_ignored,
-            security_advisories: security_advisories
+            security_advisories: security_advisories,
+            package_max_versions: options[:package_max_versions]
           )
       end
 
@@ -33,10 +34,24 @@ module Dependabot
       end
 
       class CustomVersionFinder < Dependabot::Nuget::UpdateChecker::VersionFinder
+        attr_reader :package_max_versions
+
+        def initialize(dependency:, dependency_files:, credentials:,
+                       ignored_versions:, raise_on_ignored: false,
+                       security_advisories:, package_max_versions:)
+          @package_max_versions = package_max_versions
+
+          super(
+            dependency: dependency, dependency_files: dependency_files, credentials: credentials,
+            ignored_versions: ignored_versions, raise_on_ignored: raise_on_ignored,
+            security_advisories: security_advisories
+          )
+        end
+
         def v3_nuget_listings
           return @filtered_v3_nuget_listings unless @filtered_v3_nuget_listings.nil?
 
-          max_version = @dependency.metadata[:max_version]
+          max_version = package_max_versions[@dependency.name]
 
           @filtered_v3_nuget_listings ||=
             super.map{ |package|

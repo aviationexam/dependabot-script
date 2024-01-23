@@ -278,6 +278,10 @@ parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
   options: options,
 )
 
+if parser.is_a?(Dependabot::Nuget::CustomFileParser)
+  options[:package_max_versions] = parser.project_file_parser.package_max_versions
+end
+
 dependencies = parser.parse
 
 def auth_header_for(token)
