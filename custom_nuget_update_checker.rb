@@ -36,10 +36,7 @@ module Dependabot
         def v3_nuget_listings
           return @filtered_v3_nuget_listings unless @filtered_v3_nuget_listings.nil?
 
-          max_version = @dependency.requirements
-                                   .map { |req| req[:metadata] }.reject(&:nil?)
-                                   .map { |metadata| metadata[:max_version] }.reject(&:nil?)
-                                   .sort.first
+          max_version = @dependency.metadata[:max_version]
 
           @filtered_v3_nuget_listings ||=
             super.map{ |package|

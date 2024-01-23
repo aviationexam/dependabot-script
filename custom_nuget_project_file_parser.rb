@@ -16,6 +16,8 @@ module Dependabot
       end
 
       class CustomNugetProjectFileParser < Dependabot::Nuget::FileParser::ProjectFileParser
+        DEPENDABOT_PACKAGE_VERSION_SELECTOR = "ItemGroup > DependabotPackageVersion"
+
         def parse_dependencies(project_file)
           dependency_set = Dependabot::FileParsers::Base::DependencySet.new
 
@@ -27,11 +29,18 @@ module Dependabot
             req = dependency_requirement(dependency_node, project_file)
             version = dependency_version(dependency_node, project_file)
             prop_name = req_property_name(dependency_node)
-            dependabot_max_version = get_node_max_version_value(dependency_node)
             is_dev = dependency_node.name == "DevelopmentDependency"
 
-            dependency = build_dependency(name, req, version, prop_name, project_file, dev: is_dev, max_version: dependabot_max_version)
+            dependency = build_dependency(name, req, version, prop_name, project_file, dev: is_dev)
             dependency_set << dependency if dependency
+          end
+
+          doc.css(DEPENDABOT_PACKAGE_VERSION_SELECTOR).each do |dependency_node|
+            name = dependency_name(dependency_node, project_file)
+            dependabot_max_version = get_node_max_version_value(dependency_node)
+
+            dep = dependency_set.dependency_for_name(name)
+            dep.metadata[:max_version] = Version.new(dependabot_max_version)
           end
 
           add_global_package_references(dependency_set)
@@ -88,7 +97,7 @@ module Dependabot
         end
 
         def get_node_max_version_value(node)
-          get_attribute_value(node, "DependabotMaxVersion")
+          get_attribute_value(node, "MaxVersion")
         end
       end
     end
