@@ -51,7 +51,7 @@ module Dependabot
         def v3_nuget_listings
           return @filtered_v3_nuget_listings unless @filtered_v3_nuget_listings.nil?
 
-          max_version = package_max_versions[@dependency.name]
+          max_version = package_max_versions[@dependency.name.downcase]
 
           @filtered_v3_nuget_listings ||=
             super.map{ |package|

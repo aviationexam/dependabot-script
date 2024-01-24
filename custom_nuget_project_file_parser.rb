@@ -29,7 +29,7 @@ module Dependabot
                   name = dependency_name(package_node, file)
                   dependabot_max_version = get_node_max_version_value(package_node)
 
-                  package_max_versions[name] = Version.new(dependabot_max_version)
+                  package_max_versions[name.downcase] = Version.new(dependabot_max_version)
                 end
               end
               package_max_versions
