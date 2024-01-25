@@ -186,6 +186,15 @@ elsif ENV["AZURE_ACCESS_TOKEN"]
     directory: directory,
     branch: branch,
   )
+
+  submodule_source = Dependabot::Source.new(
+    provider: "azure",
+    hostname: azure_hostname,
+    api_endpoint: "https://#{azure_hostname}/",
+    repo: repo_name,
+    directory: '/',
+    branch: branch,
+  )
 elsif ENV["BITBUCKET_ACCESS_TOKEN"]
   bitbucket_hostname = ENV["BITBUCKET_HOSTNAME"] || "bitbucket.org"
 
@@ -239,6 +248,8 @@ always_clone = Dependabot::Utils
                  .always_clone_for_package_manager?(package_manager)
 vendor_dependencies = options[:vendor_dependencies]
 repo_contents_path = File.expand_path(File.join("tmp", repo_name.split("/"))) if vendor_dependencies || always_clone
+submodule_repo_contents_path = File.expand_path(File.join("tmp", "submodules", repo_name.split("/"))) if vendor_dependencies || always_clone
+submodule_target_repo_contents_path = File.expand_path(File.join("tmp", "submodules", "target", repo_name.split("/"))) if vendor_dependencies || always_clone
 
 ##############################
 # Fetch the dependency files #
@@ -250,9 +261,17 @@ fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
   repo_contents_path: repo_contents_path,
   options: options,
 )
+submodule_fetcher = Dependabot::FileFetchers.for_package_manager('submodules').new(
+  source: submodule_source,
+  credentials: credentials,
+  repo_contents_path: submodule_repo_contents_path,
+  options: options,
+)
 
 files = fetcher.files
 commit = fetcher.commit
+
+submodule_files = submodule_fetcher.files
 
 ignore_directory.each do |d|
   puts "Ignored directory: #{d}"
@@ -278,8 +297,58 @@ parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
   options: options,
 )
 
+submodule_parser = Dependabot::FileParsers.for_package_manager('submodules').new(
+  dependency_files: submodule_files,
+  repo_contents_path: submodule_repo_contents_path,
+  source: submodule_source,
+  credentials: credentials,
+  options: options,
+)
+
+submodules = submodule_parser.parse
+
 if parser.is_a?(Dependabot::Nuget::CustomFileParser)
   options[:package_max_versions] = parser.project_file_parser.package_max_versions
+end
+
+submodules.each do |item|
+  item.requirements.each do |requirement|
+    submodule_url = requirement[:source][:url]
+
+    submodule_url = submodule_url.gsub(/^https:\/\/#{azure_hostname}\//, '')
+
+    target_source = Dependabot::Source.new(
+      provider: "azure",
+      hostname: azure_hostname,
+      api_endpoint: "https://#{azure_hostname}/",
+      repo: submodule_url,
+      directory: '/',
+      branch: branch,
+    )
+
+    target_fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
+      source: target_source,
+      credentials: credentials,
+      repo_contents_path: submodule_target_repo_contents_path,
+      options: options,
+    )
+
+    target_files = target_fetcher.files
+
+    target_parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
+      dependency_files: target_files,
+      repo_contents_path: submodule_target_repo_contents_path,
+      source: target_source,
+      credentials: credentials,
+      options: options,
+    )
+
+    if target_parser.is_a?(Dependabot::Nuget::CustomFileParser)
+      target_parser.project_file_parser.package_max_versions.each do |package, version|
+        options[:package_max_versions][package] = version
+      end
+    end
+  end
 end
 
 dependencies = parser.parse
