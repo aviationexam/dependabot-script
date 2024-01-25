@@ -311,6 +311,8 @@ if parser.is_a?(Dependabot::Nuget::CustomFileParser)
   options[:package_max_versions] = parser.project_file_parser.package_max_versions
 end
 
+with_package_max_version = options[:package_max_versions].any?
+
 submodules.each do |item|
   item.requirements.each do |requirement|
     submodule_url = requirement[:source][:url]
@@ -352,6 +354,22 @@ submodules.each do |item|
 end
 
 dependencies = parser.parse
+
+if with_package_max_version
+  dependencies = dependencies.select { |dep|
+    is_in_csproj = dep.requirements.any? { |requirement|
+      requirement[:file].end_with?(".csproj")
+    }
+
+    is_in_props = dep.requirements.any? { |requirement|
+      requirement[:file].end_with?(".props")
+    }
+
+    is_in_csproj ? is_in_props : true
+  }
+end
+
+# dependencies = dependencies.select { |dep| dep.name == "Sentry.AspNetCore" }
 
 def auth_header_for(token)
   return {} unless token
