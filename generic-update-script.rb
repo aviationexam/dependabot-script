@@ -29,9 +29,11 @@ credentials = [
 
 # Full name of the repo you want to create pull requests for.
 repo_name = ENV["PROJECT_PATH"] # namespace/project
+submodule_repo_name = ENV["SUBMODULE_PROJECT_PATH"] # namespace/project
 
 # Directory where the base dependency files are.
 directory = ENV["DIRECTORY_PATH"] || "/"
+submodule_directory = ENV["SUBMODULE_DIRECTORY_PATH"] || "/"
 
 # Branch to look at. Defaults to repo's default branch
 branch = ENV["BRANCH"]
@@ -187,14 +189,14 @@ elsif ENV["AZURE_ACCESS_TOKEN"]
     branch: branch,
   )
 
-  submodule_source = Dependabot::Source.new(
+  submodule_source = submodule_repo_name != nil && submodule_directory != nil ? Dependabot::Source.new(
     provider: "azure",
     hostname: azure_hostname,
     api_endpoint: "https://#{azure_hostname}/",
-    repo: repo_name,
-    directory: '/',
+    repo: submodule_repo_name,
+    directory: submodule_directory,
     branch: branch,
-  )
+  ) : nil
 elsif ENV["BITBUCKET_ACCESS_TOKEN"]
   bitbucket_hostname = ENV["BITBUCKET_HOSTNAME"] || "bitbucket.org"
 
@@ -248,8 +250,7 @@ always_clone = Dependabot::Utils
                  .always_clone_for_package_manager?(package_manager)
 vendor_dependencies = options[:vendor_dependencies]
 repo_contents_path = File.expand_path(File.join("tmp", repo_name.split("/"))) if vendor_dependencies || always_clone
-submodule_repo_contents_path = File.expand_path(File.join("tmp", "submodules", repo_name.split("/"))) if vendor_dependencies || always_clone
-submodule_target_repo_contents_path = File.expand_path(File.join("tmp", "submodules", "target", repo_name.split("/"))) if vendor_dependencies || always_clone
+submodule_repo_contents_path = File.expand_path(File.join("tmp", submodule_repo_name.split("/"))) if submodule_repo_name != nil && (vendor_dependencies || always_clone)
 
 ##############################
 # Fetch the dependency files #
@@ -261,17 +262,17 @@ fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
   repo_contents_path: repo_contents_path,
   options: options,
 )
-submodule_fetcher = Dependabot::FileFetchers.for_package_manager('submodules').new(
+submodule_fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
   source: submodule_source,
   credentials: credentials,
   repo_contents_path: submodule_repo_contents_path,
   options: options,
-)
+) if submodule_source
 
 files = fetcher.files
 commit = fetcher.commit
 
-submodule_files = submodule_fetcher.files
+submodule_files = submodule_fetcher.files if submodule_fetcher
 
 ignore_directory.each do |d|
   puts "Ignored directory: #{d}"
@@ -297,65 +298,27 @@ parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
   options: options,
 )
 
-submodule_parser = Dependabot::FileParsers.for_package_manager('submodules').new(
+submodule_parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
   dependency_files: submodule_files,
   repo_contents_path: submodule_repo_contents_path,
   source: submodule_source,
   credentials: credentials,
   options: options,
-)
-
-submodules = submodule_parser.parse
+) if submodule_files
 
 if parser.is_a?(Dependabot::Nuget::CustomFileParser)
   options[:package_max_versions] = parser.project_file_parser.package_max_versions
 end
 
-with_package_max_version = options[:package_max_versions].any?
-
-submodules.each do |item|
-  item.requirements.each do |requirement|
-    submodule_url = requirement[:source][:url]
-
-    submodule_url = submodule_url.gsub(/^https:\/\/#{azure_hostname}\//, '')
-
-    target_source = Dependabot::Source.new(
-      provider: "azure",
-      hostname: azure_hostname,
-      api_endpoint: "https://#{azure_hostname}/",
-      repo: submodule_url,
-      directory: '/',
-      branch: branch,
-    )
-
-    target_fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
-      source: target_source,
-      credentials: credentials,
-      repo_contents_path: submodule_target_repo_contents_path,
-      options: options,
-    )
-
-    target_files = target_fetcher.files
-
-    target_parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
-      dependency_files: target_files,
-      repo_contents_path: submodule_target_repo_contents_path,
-      source: target_source,
-      credentials: credentials,
-      options: options,
-    )
-
-    if target_parser.is_a?(Dependabot::Nuget::CustomFileParser)
-      target_parser.project_file_parser.package_max_versions.each do |package, version|
-        options[:package_max_versions][package] = version
-      end
-    end
+if submodule_parser != nil && submodule_parser.is_a?(Dependabot::Nuget::CustomFileParser)
+  submodule_parser.project_file_parser.package_max_versions.each do |package, version|
+    options[:package_max_versions][package] = version
   end
 end
 
 dependencies = parser.parse
 
-if with_package_max_version
+if options[:package_max_versions].any?
   dependencies = dependencies.select { |dep|
     is_in_csproj = dep.requirements.any? { |requirement|
       requirement[:file].end_with?(".csproj")
