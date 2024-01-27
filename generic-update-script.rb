@@ -318,7 +318,7 @@ end
 
 dependencies = parser.parse
 
-if options[:package_max_versions].any?
+if options[:package_max_versions]&.any?
   dependencies = dependencies.select { |dep|
     is_in_csproj = dep.requirements.any? { |requirement|
       requirement[:file].end_with?(".csproj")
