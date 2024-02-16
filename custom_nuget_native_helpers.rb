@@ -72,7 +72,7 @@ module Dependabot
         puts "running NuGet updater:\n" + command
 
         NuGetConfigCredentialHelpers.patch_nuget_config_for_action(credentials) do
-          output = SharedHelpers.run_shell_command(command, env: env, fingerprint: fingerprint)
+          output = SharedHelpers.run_shell_command(command, allow_unsafe_shell_command: true, env: env, fingerprint: fingerprint)
           puts output
         end
       end
