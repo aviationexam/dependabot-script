@@ -49,38 +49,32 @@ module Dependabot
         if nuget_credentials.any?
           endpoint_credentials = []
 
-          nuget_credentials.each_with_index do |c|
+          nuget_credentials.each do |c|
             next unless c["token"]
 
-            nuget_api_token = c["token"]
-            if nuget_api_token.start_with?(':')
-              nuget_api_token = nuget_api_token[1..]
-            end
-            endpoint_credentials << "{\"endpoint\":\"#{c["url"]}\", \"username\":\"optional\", \"password\":\"#{nuget_api_token}\"}"
+            exploded_token = T.must(c["token"]).split(":", 2)
+
+            next unless exploded_token.length == 2
+
+            username = exploded_token[0]
+            password = exploded_token[1]
+
+            endpoint_credentials << <<~NUGET_ENDPOINT_CREDENTIAL
+              {"endpoint":"#{c['url']}", "username":"#{username}", "password":"#{password}"}
+            NUGET_ENDPOINT_CREDENTIAL
           end
 
-          env["VSS_NUGET_EXTERNAL_FEED_ENDPOINTS"]="{\"endpointCredentials\": [#{endpoint_credentials.join(',')}]}"
+          env["VSS_NUGET_EXTERNAL_FEED_ENDPOINTS"] = "{\"endpointCredentials\": [#{endpoint_credentials.join(',')}]}"
         end
 
         puts "running NuGet updater:\n" + command
 
-        patch_nuget_config_for_action(credentials) do
+        NuGetConfigCredentialHelpers.patch_nuget_config_for_action(credentials) do
           output = SharedHelpers.run_shell_command(command, env: env, fingerprint: fingerprint)
           puts output
         end
       end
       # rubocop:enable Metrics/MethodLength
-
-      def self.patch_nuget_config_for_action(credentials, &_block)
-        NuGetConfigCredentialHelpers.add_credentials_to_nuget_config(credentials)
-        begin
-          yield
-        rescue StandardError => e
-          puts "block causes an exception #{e}: #{e.message}"
-        ensure
-          NuGetConfigCredentialHelpers.restore_user_nuget_config
-        end
-      end
     end
   end
 end
