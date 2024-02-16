@@ -56,9 +56,11 @@ branch = ENV["BRANCH"]
 # - terraform
 package_manager = ENV["PACKAGE_MANAGER"] || "bundler"
 
+Dependabot.logger = Logger.new($stdout, level: Logger::INFO)
+
 # Expected to be a JSON object passed to the underlying components
 options = JSON.parse(ENV["OPTIONS"] || "{}", { :symbolize_names => true })
-puts "Running with options: #{options}"
+Dependabot.logger.info("Running with options: #{options}")
 
 provider_metadata = nil
 if ENV["AZURE_WORK_ITEM"]
@@ -243,7 +245,7 @@ else
 end
 
 ignore_dependency.each do |d|
-  puts "Ignored dependency: #{d}"
+  Dependabot.logger.info("Ignored dependency: #{d}")
 end
 
 always_clone = true
@@ -254,7 +256,7 @@ submodule_repo_contents_path = File.expand_path(File.join("tmp", submodule_repo_
 ##############################
 # Fetch the dependency files #
 ##############################
-puts "Fetching #{package_manager} dependency files for #{repo_name}"
+Dependabot.logger.info("Fetching #{package_manager} dependency files for #{repo_name}")
 fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
   source: source,
   credentials: credentials,
@@ -274,21 +276,21 @@ commit = fetcher.commit
 submodule_files = submodule_fetcher.files if submodule_fetcher
 
 ignore_directory.each do |d|
-  puts "Ignored directory: #{d}"
+  Dependabot.logger.info("Ignored directory: #{d}")
 
   ignored_source = files.select { |file| file.name.include? d }
 
   files = files.reject { |file| file.name.include? d }
 
   ignored_source.each do |i|
-    puts " - ignored source: #{i}"
+    Dependabot.logger.info(" - ignored source: #{i}")
   end
 end
 
 ##############################
 # Parse the dependency files #
 ##############################
-puts "Parsing dependencies information"
+Dependabot.logger.info("Parsing dependencies information")
 parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
   dependency_files: files,
   repo_contents_path: repo_contents_path,
@@ -315,7 +317,7 @@ if submodule_parser != nil && submodule_parser.is_a?(Dependabot::Nuget::CustomFi
   end
 end
 
-dependencies = parser.parse
+dependencies = parser.parse.select { |dep| dep.name.start_with?("xunit.") }
 
 if options[:package_max_versions]&.any?
   dependencies = dependencies.select { |dep|
@@ -374,11 +376,11 @@ dependencies_to_update =
     .sort_by { |dep| dep.name }
     .reject { |dep|
       if dep.version == nil
-        puts "__ #{dep.name} - managed in submodule"
+        Dependabot.logger.info("__ #{dep.name} - managed in submodule")
 
         true
       elsif dep.version.start_with?('$')
-        puts "__ #{dep.name} - managed externally"
+        Dependabot.logger.info("__ #{dep.name} - managed externally")
 
         true
       else
@@ -398,11 +400,11 @@ dependencies_to_update =
     .reject { |checker|
       dep = checker.dependency
       if checker.up_to_date?
-        puts "#{dep.name} (version #{dep.version}) - up to date"
+        Dependabot.logger.info("#{dep.name} (version #{dep.version}) - up to date")
       end
 
       if not checker.up_to_date? and ignore_dependency.include? dep.name
-        puts "__ #{dep.name} (version #{dep.version}) - ignoring"
+        Dependabot.logger.info("__ #{dep.name} (version #{dep.version}) - ignoring")
       end
 
       (checker.up_to_date? or ignore_dependency.include? dep.name)
@@ -465,7 +467,7 @@ dependencies_to_update.each do |key, items|
   # Generate updated dependency files #
   #####################################
   updated_deps.each do |d|
-    puts "  - Updating #{d.name} (from #{d.previous_version} to #{d.version})…"
+    Dependabot.logger.info("  - Updating #{d.name} (from #{d.previous_version} to #{d.version})…")
   end
 
   updater = Dependabot::FileUpdaters.for_package_manager(package_manager).new(
@@ -522,14 +524,14 @@ dependencies_to_update.each do |key, items|
     )
     branch_namer.instance_variable_set('@strategy', branch_name_strategy)
 
-    puts "  branch: #{branch_name_strategy.new_branch_name}"
+    Dependabot.logger.info("  branch: #{branch_name_strategy.new_branch_name}")
   end
 
   pull_request = pr_creator.create
 
   next unless pull_request
 
-  puts " submitted"
+  Dependabot.logger.info(" submitted")
 
   # Enable GitLab "merge when pipeline succeeds" feature.
   # Merge requests created and successfully tested will be merge automatically.
@@ -552,9 +554,9 @@ dependencies_to_update.each do |key, items|
       pull_request_id = JSON.parse(pull_request.body).fetch("pullRequestId")
 
     rescue KeyError
-      puts "Unexpected PR response #{pull_request.body}"
+      Dependabot.logger.error("Unexpected PR response #{pull_request.body}")
     else
-      puts "  autocomplete PR #{pull_request_id}"
+      Dependabot.logger.info("  autocomplete PR #{pull_request_id}")
 
       merge_commit_message = updated_deps.map { |d| "Updating #{d.name} (from #{d.previous_version} to #{d.version})" }.join('\n')
 
@@ -574,9 +576,9 @@ dependencies_to_update.each do |key, items|
         ignore_config_ids = []
       )
 
-      puts "  autocompletion set"
+      Dependabot.logger.info("  autocompletion set")
     end
   end
 end
 
-puts "Done"
+Dependabot.logger.info("Done")
