@@ -6,6 +6,7 @@ require "./custom_gradle_update_checker.rb"
 require "./custom_nuget_project_file_parser.rb"
 require "./custom_nuget_update_checker.rb"
 require "./custom_nuget_file_updater.rb"
+require "dependabot/credential"
 require "dependabot/file_fetchers"
 require "dependabot/file_parsers"
 require "dependabot/update_checkers"
@@ -19,12 +20,14 @@ require "json"
 $stdout.sync = true
 
 credentials = [
-  {
-    "type" => "git_source",
-    "host" => "github.com",
-    "username" => "x-access-token",
-    "password" => ENV["GITHUB_ACCESS_TOKEN"] # A GitHub access token with read access to public repos
-  }
+  Dependabot::Credential.new(
+    {
+      "type" => "git_source",
+      "host" => "github.com",
+      "username" => "x-access-token",
+      "password" => ENV["GITHUB_ACCESS_TOKEN"] # A GitHub access token with read access to public repos
+    }
+  )
 ]
 
 # Full name of the repo you want to create pull requests for.
@@ -86,43 +89,43 @@ if ENV["ALTERNATIVE_NUGET_FEED"]
     alternative_token = ":#{ENV["ALTERNATIVE_NUGET_ACCESS_TOKEN"]}"
   end
 
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "nuget_feed",
     "url" => ENV["ALTERNATIVE_NUGET_FEED"],
     "token" => alternative_token
-  }
+  })
 end
 if ENV["NUGET_ACCESS_TOKEN"] && ENV["NUGET_FEED"]
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "nuget_feed",
     "url" => ENV["NUGET_FEED"],
     "token" => ":#{ENV["NUGET_ACCESS_TOKEN"]}" # Don't forget the colon
-  }
+  })
 end
 
 if ENV["PACKAGE_MANAGER"] == "gradle"
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "maven_repository",
     "url" => "https://repo1.maven.org/maven2/",
-  }
+  })
 end
 
 if ENV["GRADLE_ACCESS_TOKEN"] && ENV["GRADLE_FEED"]
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "maven_repository",
     "url" => ENV["GRADLE_FEED"],
     "username" => "aviationexam",
     "password" => "#{ENV["GRADLE_ACCESS_TOKEN"]}"
-  }
+  })
 end
 
 if ENV["NPM_ACCESS_TOKEN"] && ENV["NPM_REGISTRY"]
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "npm_registry",
     "registry" => ENV["NPM_REGISTRY"],
     "url" => ENV["NPM_REGISTRY_URL"],
     "token" => ":#{ENV["NPM_ACCESS_TOKEN"]}" # Don't forget the colon
-  }
+  })
 end
 if ENV["ALTERNATIVE_NPM_REGISTRY"]
   alternative_token = nil
@@ -130,21 +133,21 @@ if ENV["ALTERNATIVE_NPM_REGISTRY"]
     alternative_token = ":#{ENV["ALTERNATIVE_NPM_ACCESS_TOKEN"]}"
   end
 
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "npm_registry",
     "registry" => ENV["ALTERNATIVE_NPM_REGISTRY"],
     "url" => ENV["ALTERNATIVE_NPM_REGISTRY_URL"],
     "token" => alternative_token
-  }
+  })
 end
 
 if ENV["GITHUB_ENTERPRISE_ACCESS_TOKEN"]
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "git_source",
     "host" => ENV["GITHUB_ENTERPRISE_HOSTNAME"], # E.g., "ghe.mydomain.com",
     "username" => "x-access-token",
     "password" => ENV["GITHUB_ENTERPRISE_ACCESS_TOKEN"] # A GHE access token with API permission
-  }
+  })
 
   source = Dependabot::Source.new(
     provider: "github",
@@ -157,12 +160,12 @@ if ENV["GITHUB_ENTERPRISE_ACCESS_TOKEN"]
 elsif ENV["GITLAB_ACCESS_TOKEN"]
   gitlab_hostname = ENV["GITLAB_HOSTNAME"] || "gitlab.com"
 
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "git_source",
     "host" => gitlab_hostname,
     "username" => "x-access-token",
     "password" => ENV["GITLAB_ACCESS_TOKEN"] # A GitLab access token with API permission
-  }
+  })
 
   source = Dependabot::Source.new(
     provider: "gitlab",
@@ -175,12 +178,12 @@ elsif ENV["GITLAB_ACCESS_TOKEN"]
 elsif ENV["AZURE_ACCESS_TOKEN"]
   azure_hostname = ENV["AZURE_HOSTNAME"] || "dev.azure.com"
 
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "git_source",
     "host" => azure_hostname,
     "username" => "x-access-token",
     "password" => ENV["AZURE_ACCESS_TOKEN"]
-  }
+  })
 
   source = Dependabot::Source.new(
     provider: "azure",
@@ -202,12 +205,12 @@ elsif ENV["AZURE_ACCESS_TOKEN"]
 elsif ENV["BITBUCKET_ACCESS_TOKEN"]
   bitbucket_hostname = ENV["BITBUCKET_HOSTNAME"] || "bitbucket.org"
 
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "git_source",
     "host" => bitbucket_hostname,
     "username" => nil,
     "token" => ENV["BITBUCKET_ACCESS_TOKEN"]
-  }
+  })
 
   source = Dependabot::Source.new(
     provider: "bitbucket",
@@ -220,12 +223,12 @@ elsif ENV["BITBUCKET_ACCESS_TOKEN"]
 elsif ENV["BITBUCKET_APP_USERNAME"] && ENV["BITBUCKET_APP_PASSWORD"]
   bitbucket_hostname = ENV["BITBUCKET_HOSTNAME"] || "bitbucket.org"
 
-  credentials << {
+  credentials << Dependabot::Credential.new({
     "type" => "git_source",
     "host" => bitbucket_hostname,
     "username" => ENV["BITBUCKET_APP_USERNAME"],
     "password" => ENV["BITBUCKET_APP_PASSWORD"]
-  }
+  })
 
   source = Dependabot::Source.new(
     provider: "bitbucket",
