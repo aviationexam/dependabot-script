@@ -8,11 +8,11 @@ module Dependabot
   module Nuget
     class CustomFileParser < Dependabot::Nuget::FileParser
       def project_file_parser
-        @project_file_parser ||=
-          CustomNugetProjectFileParser.new(
-            dependency_files: dependency_files,
-            credentials: credentials
-          )
+        @project_file_parser ||= CustomNugetProjectFileParser.new(
+          dependency_files: dependency_files,
+          credentials: credentials,
+          repo_contents_path: @repo_contents_path
+        )
       end
 
       class CustomNugetProjectFileParser < Dependabot::Nuget::FileParser::ProjectFileParser
