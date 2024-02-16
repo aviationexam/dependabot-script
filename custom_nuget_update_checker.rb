@@ -17,6 +17,7 @@ module Dependabot
             ignored_versions: ignored_versions,
             raise_on_ignored: @raise_on_ignored,
             security_advisories: security_advisories,
+            repo_contents_path: @repo_contents_path,
             package_max_versions: options[:package_max_versions]
           )
       end
@@ -29,7 +30,8 @@ module Dependabot
             target_version_details: latest_version_details,
             credentials: credentials,
             ignored_versions: ignored_versions,
-            raise_on_ignored: @raise_on_ignored
+            raise_on_ignored: @raise_on_ignored,
+            repo_contents_path: @repo_contents_path
           )
       end
 
@@ -38,13 +40,16 @@ module Dependabot
 
         def initialize(dependency:, dependency_files:, credentials:,
                        ignored_versions:, raise_on_ignored: false,
-                       security_advisories:, package_max_versions:)
+                       security_advisories:,
+                       repo_contents_path:,
+                       package_max_versions:)
           @package_max_versions = package_max_versions
 
           super(
             dependency: dependency, dependency_files: dependency_files, credentials: credentials,
             ignored_versions: ignored_versions, raise_on_ignored: raise_on_ignored,
-            security_advisories: security_advisories
+            security_advisories: security_advisories,
+            repo_contents_path: repo_contents_path
           )
         end
 
