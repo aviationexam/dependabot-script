@@ -246,8 +246,7 @@ ignore_dependency.each do |d|
   puts "Ignored dependency: #{d}"
 end
 
-always_clone = Dependabot::Utils
-                 .always_clone_for_package_manager?(package_manager)
+always_clone = true
 vendor_dependencies = options[:vendor_dependencies]
 repo_contents_path = File.expand_path(File.join("tmp", repo_name.split("/"))) if vendor_dependencies || always_clone
 submodule_repo_contents_path = File.expand_path(File.join("tmp", submodule_repo_name.split("/"))) if submodule_repo_name != nil && (vendor_dependencies || always_clone)
