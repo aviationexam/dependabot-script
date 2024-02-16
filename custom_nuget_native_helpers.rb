@@ -9,7 +9,7 @@ module Dependabot
       # rubocop:disable Metrics/MethodLength
       def self.run_nuget_updater_tool(repo_root:, proj_path:, dependency:, is_transitive:, credentials:)
         exe_path = File.join(Dependabot::Nuget::NativeHelpers.native_helpers_root, "NuGetUpdater", "NuGetUpdater.Cli")
-        command = [
+        command_parts = [
           exe_path,
           "update",
           "--repo-root",
@@ -22,9 +22,11 @@ module Dependabot
           dependency.version,
           "--previous-version",
           dependency.previous_version,
-          is_transitive ? "--transitive" : "",
+          is_transitive ? "--transitive" : nil,
           "--verbose"
-        ].join(" ")
+        ].compact
+
+        command = Shellwords.join(command_parts)
 
         fingerprint = [
           exe_path,
@@ -39,9 +41,9 @@ module Dependabot
           "<new-version>",
           "--previous-version",
           "<previous-version>",
-          is_transitive ? "--transitive" : "",
+          is_transitive ? "--transitive" : nil,
           "--verbose"
-        ].join(" ")
+        ].compact.join(" ")
 
         nuget_credentials = credentials.select { |cred| cred["type"] == "nuget_feed" }
 
