@@ -320,7 +320,7 @@ if submodule_parser != nil && submodule_parser.is_a?(Dependabot::Nuget::CustomFi
   end
 end
 
-dependencies = parser.parse.select { |dep| dep.name.start_with?("xunit.") }
+dependencies = parser.parse
 
 if options[:package_max_versions]&.any?
   dependencies = dependencies.select { |dep|
