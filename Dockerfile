@@ -39,6 +39,7 @@ RUN cd /tmp && \
     mkdir -p "${DOTNET_INSTALL_DIR}" && \
     ./dotnet-install.sh --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
     rm dotnet-install.sh && \
+    chown -R dependabot:dependabot "${DOTNET_INSTALL_DIR}/sdk" && \
     sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
 
 RUN dotnet --list-runtimes
