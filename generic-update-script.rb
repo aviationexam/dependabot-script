@@ -4,6 +4,7 @@
 require "./custom_dependency_group_strategy.rb"
 require "./custom_gradle_update_checker.rb"
 require "./max_version_nuget_project_file_parser.rb"
+require "./custom_nuget_file_parser.rb"
 require "./custom_nuget_update_checker.rb"
 require "./custom_nuget_file_updater.rb"
 require "dependabot/credential"
