@@ -5,46 +5,60 @@ require "dependabot/nuget/native_helpers"
 module Dependabot
   module Nuget
     module CustomNativeHelpers
+      extend T::Sig
 
-      # rubocop:disable Metrics/MethodLength
+      sig do
+        params(
+          repo_root: String,
+          workspace_path: String,
+          output_path: String,
+          credentials: T::Array[Dependabot::Credential]
+        ).void
+      end
+      def self.run_nuget_discover_tool(repo_root:, workspace_path:, output_path:, credentials:)
+        (command, fingerprint) = NativeHelpers.get_nuget_discover_tool_command(repo_root: repo_root,
+                                                                               workspace_path: workspace_path,
+                                                                               output_path: output_path)
+
+        env = get_env(credentials: credentials)
+
+        puts "running NuGet discovery:\n" + command
+
+        NuGetConfigCredentialHelpers.patch_nuget_config_for_action(credentials) do
+          output = SharedHelpers.run_shell_command(command, allow_unsafe_shell_command: true, env: env, fingerprint: fingerprint)
+          puts output
+        end
+      end
+
+      sig do
+        params(
+          repo_root: String,
+          proj_path: String,
+          dependency: Dependency,
+          is_transitive: T::Boolean,
+          credentials: T::Array[Dependabot::Credential]
+        ).void
+      end
       def self.run_nuget_updater_tool(repo_root:, proj_path:, dependency:, is_transitive:, credentials:)
-        exe_path = File.join(Dependabot::Nuget::NativeHelpers.native_helpers_root, "NuGetUpdater", "NuGetUpdater.Cli")
-        command_parts = [
-          exe_path,
-          "update",
-          "--repo-root",
-          repo_root,
-          "--solution-or-project",
-          proj_path,
-          "--dependency",
-          dependency.name,
-          "--new-version",
-          dependency.version,
-          "--previous-version",
-          dependency.previous_version,
-          is_transitive ? "--transitive" : nil,
-          "--verbose"
-        ].compact
+        (command, fingerprint) = NativeHelpers.get_nuget_updater_tool_command(repo_root: repo_root, proj_path: proj_path,
+                                                                              dependency: dependency, is_transitive: is_transitive)
 
-        command = Shellwords.join(command_parts)
+        env = get_env(credentials: credentials)
 
-        fingerprint = [
-          exe_path,
-          "update",
-          "--repo-root",
-          "<repo-root>",
-          "--solution-or-project",
-          "<path-to-solution-or-project>",
-          "--dependency",
-          "<dependency-name>",
-          "--new-version",
-          "<new-version>",
-          "--previous-version",
-          "<previous-version>",
-          is_transitive ? "--transitive" : nil,
-          "--verbose"
-        ].compact.join(" ")
+        puts "running NuGet updater:\n" + command
 
+        NuGetConfigCredentialHelpers.patch_nuget_config_for_action(credentials) do
+          output = SharedHelpers.run_shell_command(command, allow_unsafe_shell_command: true, env: env, fingerprint: fingerprint)
+          puts output
+        end
+      end
+
+      sig do
+        params(
+          credentials: T::Array[Dependabot::Credential]
+        ).returns(T::Hash[String, String])
+      end
+      def self.get_env(credentials:)
         nuget_credentials = credentials.select { |cred| cred["type"] == "nuget_feed" }
 
         env = {}
@@ -69,14 +83,8 @@ module Dependabot
           env["VSS_NUGET_EXTERNAL_FEED_ENDPOINTS"] = "{\"endpointCredentials\": [#{endpoint_credentials.join(',')}]}"
         end
 
-        puts "running NuGet updater:\n" + command
-
-        NuGetConfigCredentialHelpers.patch_nuget_config_for_action(credentials) do
-          output = SharedHelpers.run_shell_command(command, allow_unsafe_shell_command: true, env: env, fingerprint: fingerprint)
-          puts output
-        end
+        env
       end
-      # rubocop:enable Metrics/MethodLength
     end
   end
 end
