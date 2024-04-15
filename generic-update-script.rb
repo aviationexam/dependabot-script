@@ -3,7 +3,7 @@
 
 require "./custom_dependency_group_strategy.rb"
 require "./custom_gradle_update_checker.rb"
-require "./custom_nuget_project_file_parser.rb"
+require "./max_version_nuget_project_file_parser.rb"
 require "./custom_nuget_update_checker.rb"
 require "./custom_nuget_file_updater.rb"
 require "dependabot/credential"
@@ -290,6 +290,21 @@ ignore_directory.each do |d|
   end
 end
 
+max_version_nuget_project_file_parser = Dependabot::Nuget::MaxVersionNugetProjectFileParser.new(
+  dependency_files: files,
+)
+max_version_nuget_project_file_parser_submodule_files = Dependabot::Nuget::MaxVersionNugetProjectFileParser.new(
+  dependency_files: submodule_files,
+) if submodule_files
+
+options[:package_max_versions] = max_version_nuget_project_file_parser.package_max_versions
+
+if max_version_nuget_project_file_parser_submodule_files != nil
+  max_version_nuget_project_file_parser_submodule_files.package_max_versions.each do |package, version|
+    options[:package_max_versions][package] = version
+  end
+end
+
 ##############################
 # Parse the dependency files #
 ##############################
@@ -301,24 +316,6 @@ parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
   credentials: credentials,
   options: options,
 )
-
-submodule_parser = Dependabot::FileParsers.for_package_manager(package_manager).new(
-  dependency_files: submodule_files,
-  repo_contents_path: submodule_repo_contents_path,
-  source: submodule_source,
-  credentials: credentials,
-  options: options,
-) if submodule_files
-
-if parser.is_a?(Dependabot::Nuget::CustomFileParser)
-  options[:package_max_versions] = parser.project_file_parser.package_max_versions
-end
-
-if submodule_parser != nil && submodule_parser.is_a?(Dependabot::Nuget::CustomFileParser)
-  submodule_parser.project_file_parser.package_max_versions.each do |package, version|
-    options[:package_max_versions][package] = version
-  end
-end
 
 dependencies = parser.parse
 
