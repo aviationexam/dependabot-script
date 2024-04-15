@@ -4,7 +4,7 @@ ARG CODE_DIR=/home/dependabot/dependabot-script
 RUN mkdir -p ${CODE_DIR}
 
 # Install .NET SDK
-ARG DOTNET_SDK_VERSION=8.0.101
+ARG DOTNET_SDK_VERSION=8.0.204
 ARG DOTNET_SDK_INSTALL_URL=https://dot.net/v1/dotnet-install.sh
 ENV DOTNET_INSTALL_DIR=/usr/local/dotnet/current
 ENV DOTNET_NOLOGO=true
