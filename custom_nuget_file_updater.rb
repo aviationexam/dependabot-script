@@ -6,23 +6,23 @@ require "./custom_nuget_native_helpers.rb"
 module Dependabot
   module Nuget
     class CustomFileUpdater < Dependabot::Nuget::FileUpdater
-      def try_update_projects(dependency)
-        update_ran = T.let(false, T::Boolean)
+      sig { params(dependency: Dependency, proj_path: String).void }
+      def call_nuget_updater_tool(dependency, proj_path)
+        CustomNativeHelpers.run_nuget_updater_tool(repo_root: T.must(repo_contents_path), proj_path: proj_path,
+                                                   dependency: dependency, is_transitive: !dependency.top_level?,
+                                                   credentials: credentials)
 
-        # run update for each project file
-        project_files.each do |project_file|
-          project_dependencies = project_dependencies(project_file)
-          proj_path = dependency_file_path(project_file)
-
-          next unless project_dependencies.any? { |dep| dep.name.casecmp(dependency.name).zero? }
-
-          CustomNativeHelpers.run_nuget_updater_tool(repo_root: repo_contents_path, proj_path: proj_path,
-                                               dependency: dependency, is_transitive: !dependency.top_level?,
-                                               credentials: credentials)
-          update_ran = true
-        end
-
-        update_ran
+        # Tests need to track how many times we call the tooling updater to ensure we don't recurse needlessly
+        # Ideally we should find a way to not run this code in prod
+        # (or a better way to track calls made to NativeHelpers)
+        @update_tooling_calls ||= T.let({}, T.nilable(T::Hash[String, Integer]))
+        key = proj_path + dependency.name
+        @update_tooling_calls[key] =
+          if @update_tooling_calls[key]
+            T.must(@update_tooling_calls[key]) + 1
+          else
+            1
+          end
       end
     end
   end
