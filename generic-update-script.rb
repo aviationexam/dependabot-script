@@ -1,6 +1,10 @@
 # This script is designed to loop through all dependencies in a GHE, GitLab or
 # Azure DevOps project, creating PRs where necessary.
 
+if File.exists?("./test-env.rb")
+  require "./test-env.rb"
+end
+
 require "./custom_dependency_group_strategy.rb"
 require "./custom_gradle_update_checker.rb"
 require "./max_version_nuget_project_file_parser.rb"
