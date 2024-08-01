@@ -8,6 +8,7 @@ require "dependabot/nuget/version"
 module Dependabot
   module Nuget
     class CustomUpdateChecker < Dependabot::Nuget::UpdateChecker
+      sig { returns(CustomVersionFinder) }
       def version_finder
         @version_finder ||=
           CustomVersionFinder.new(
