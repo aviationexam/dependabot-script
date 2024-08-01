@@ -13,7 +13,7 @@ ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 ENV DOTNET_NUGET_CLIENT_REVISION=dev
 
 # See https://github.com/nodesource/distributions#installation-instructions
-ARG NODEJS_VERSION=18.x
+ARG NODEJS_VERSION=20
 
 # Check for updates at https://github.com/npm/cli/releases
 # This version should be compatible with the Node.js version declared above. See https://nodejs.org/en/download/releases as well
@@ -21,7 +21,7 @@ ARG NODEJS_VERSION=18.x
 ARG NPM_VERSION=9.6.5
 
 # Check for updates at https://github.com/yarnpkg/berry/releases
-ARG YARN_VERSION=3.7.0
+ARG YARN_VERSION=4.1.1
 
 ENV DEPENDABOT_NATIVE_HELPERS_PATH="/opt"
 ENV PATH="${PATH}:${DEPENDABOT_NATIVE_HELPERS_PATH}/terraform/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/python/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/go_modules/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/dep/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/bin:${DOTNET_INSTALL_DIR}"
