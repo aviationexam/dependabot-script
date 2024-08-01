@@ -1,7 +1,7 @@
 # This script is designed to loop through all dependencies in a GHE, GitLab or
 # Azure DevOps project, creating PRs where necessary.
 
-if File.exists?("./test-env.rb")
+if File.exist?("./test-env.rb")
   require "./test-env.rb"
 end
 
