@@ -57,7 +57,7 @@ module Dependabot
           result_contents = File.read(update_result_file_path)
           Dependabot.logger.info("update result: #{result_contents}")
           result_json = T.let(JSON.parse(result_contents), T::Hash[String, T.untyped])
-          ensure_no_errors(result_json)
+          NativeHelpers.ensure_no_errors(result_json)
         end
       end
 
