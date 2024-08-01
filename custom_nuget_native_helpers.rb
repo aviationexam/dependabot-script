@@ -41,7 +41,8 @@ module Dependabot
       end
       def self.run_nuget_updater_tool(repo_root:, proj_path:, dependency:, is_transitive:, credentials:)
         (command, fingerprint) = NativeHelpers.get_nuget_updater_tool_command(repo_root: repo_root, proj_path: proj_path,
-                                                                              dependency: dependency, is_transitive: is_transitive)
+                                                                              dependency: dependency, is_transitive: is_transitive,
+                                                                              result_output_path: NativeHelpers.update_result_file_path)
 
         env = get_env(credentials: credentials)
 
@@ -50,6 +51,11 @@ module Dependabot
         NuGetConfigCredentialHelpers.patch_nuget_config_for_action(credentials) do
           output = SharedHelpers.run_shell_command(command, allow_unsafe_shell_command: true, env: env, fingerprint: fingerprint)
           puts output
+
+          result_contents = File.read(update_result_file_path)
+          Dependabot.logger.info("update result: #{result_contents}")
+          result_json = T.let(JSON.parse(result_contents), T::Hash[String, T.untyped])
+          ensure_no_errors(result_json)
         end
       end
 
