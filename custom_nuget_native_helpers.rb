@@ -40,9 +40,11 @@ module Dependabot
         ).void
       end
       def self.run_nuget_updater_tool(repo_root:, proj_path:, dependency:, is_transitive:, credentials:)
+        update_result_file_path = NativeHelpers.update_result_file_path
+
         (command, fingerprint) = NativeHelpers.get_nuget_updater_tool_command(repo_root: repo_root, proj_path: proj_path,
                                                                               dependency: dependency, is_transitive: is_transitive,
-                                                                              result_output_path: NativeHelpers.update_result_file_path)
+                                                                              result_output_path: update_result_file_path)
 
         env = get_env(credentials: credentials)
 
