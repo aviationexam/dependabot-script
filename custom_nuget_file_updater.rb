@@ -16,7 +16,7 @@ module Dependabot
         # Ideally we should find a way to not run this code in prod
         # (or a better way to track calls made to NativeHelpers)
         @update_tooling_calls ||= T.let({}, T.nilable(T::Hash[String, Integer]))
-        key = proj_path + dependency.name
+        key = "#{proj_path.delete_prefix(T.must(repo_contents_path))}+#{dependency.name}"
         @update_tooling_calls[key] =
           if @update_tooling_calls[key]
             T.must(@update_tooling_calls[key]) + 1
