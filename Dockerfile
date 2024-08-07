@@ -1,3 +1,5 @@
+FROM docker.io/library/rust:1.80.0-bookworm as rust
+
 FROM ghcr.io/dependabot/dependabot-updater-core:0.268.0
 
 ARG CODE_DIR=/home/dependabot/dependabot-script
@@ -11,6 +13,12 @@ ENV DOTNET_NOLOGO=true
 ENV DOTNET_ROOT="${DOTNET_INSTALL_DIR}"
 ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 ENV DOTNET_NUGET_CLIENT_REVISION=dev
+
+# Install Rust
+ENV RUSTUP_HOME=/opt/rust
+ENV CARGO_HOME=/opt/rust
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+ENV PATH="${PATH}:/opt/rust/bin"
 
 # See https://github.com/nodesource/distributions#installation-instructions
 ARG NODEJS_VERSION=20
@@ -27,6 +35,8 @@ ENV DEPENDABOT_NATIVE_HELPERS_PATH="/opt"
 ENV PATH="${PATH}:${DEPENDABOT_NATIVE_HELPERS_PATH}/terraform/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/python/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/go_modules/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/dep/bin:${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/bin:${DOTNET_INSTALL_DIR}"
 ENV MIX_HOME="${DEPENDABOT_NATIVE_HELPERS_PATH}/hex/mix"
 ENV NUGET_SCRATCH="${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/tmp"
+
+RUN mkdir -p "$RUSTUP_HOME" && chown dependabot:dependabot "$RUSTUP_HOME"
 
 # Install .NET SDK dependencies
 RUN apt update && \
@@ -62,6 +72,8 @@ RUN corepack prepare yarn@$YARN_VERSION --activate
 COPY --chown=dependabot:dependabot Gemfile Gemfile.lock ${CODE_DIR}/
 WORKDIR ${CODE_DIR}
 
+USER dependabot
+
 RUN bundle config set --local path "vendor" \
   && bundle install --jobs 4 --retry 3
 
@@ -80,5 +92,8 @@ RUN mkdir -p ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget && \
     ls -la ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers && \
     cat ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/build && \
     bash ${DEPENDABOT_NATIVE_HELPERS_PATH}/nuget/helpers/build
+
+COPY --from=rust /usr/local/rustup $RUSTUP_HOME
+COPY --from=rust /usr/local/cargo $CARGO_HOME
 
 ENTRYPOINT ["bundle", "exec", "ruby", "./generic-update-script.rb"]
