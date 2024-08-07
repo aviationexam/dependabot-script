@@ -3,7 +3,7 @@ FROM docker.io/library/rust:1.80.0-bookworm as rust
 FROM ghcr.io/dependabot/dependabot-updater-core:0.268.0
 
 ARG CODE_DIR=/home/dependabot/dependabot-script
-RUN mkdir -p ${CODE_DIR}
+RUN mkdir -p ${CODE_DIR} && chown dependabot:dependabot ${CODE_DIR}
 
 # Install .NET SDK
 ARG DOTNET_SDK_VERSION=8.0.303
