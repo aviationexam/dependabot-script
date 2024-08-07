@@ -5,6 +5,7 @@ if File.exist?("./test-env.rb")
   require "./test-env.rb"
 end
 
+require "./custom_pull_request_creator.rb"
 require "./custom_dependency_group_strategy.rb"
 require "./custom_gradle_update_checker.rb"
 require "./max_version_nuget_project_file_parser.rb"
@@ -499,7 +500,7 @@ dependencies_to_update.each do |key, items|
     assignees = ENV["GITLAB_ASSIGNEE_ID"].split(",").map(&:to_i)
   end
 
-  pr_creator = Dependabot::PullRequestCreator.new(
+  pr_creator = Dependabot::CustomPullRequestCreator.new(
     source: source,
     base_commit: commit,
     dependencies: updated_deps,
