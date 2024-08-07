@@ -7,6 +7,7 @@ end
 
 require "./custom_pull_request_creator.rb"
 require "./custom_dependency_group_strategy.rb"
+require "./custom_git_submodules_update_checker.rb"
 require "./custom_gradle_update_checker.rb"
 require "./max_version_nuget_project_file_parser.rb"
 require "./custom_nuget_file_parser.rb"
@@ -257,6 +258,17 @@ ignore_dependency.each do |d|
   Dependabot.logger.info("Ignored dependency: #{d}")
 end
 
+git_submodule_url_rewrite = Hash.new
+if ENV["SUBMODULE_PATH_REWRITE"]
+  ENV["SUBMODULE_PATH_REWRITE"].split(";").each do |rewrite|
+    rewrite_source, rewrite_target = rewrite.split("=>")
+
+    git_submodule_url_rewrite[rewrite_source] = rewrite_target
+  end
+end
+
+options[:git_submodule_url_rewrite] = git_submodule_url_rewrite
+
 always_clone = true
 vendor_dependencies = options[:vendor_dependencies]
 repo_contents_path = File.expand_path(File.join("tmp", repo_name.split("/"))) if vendor_dependencies || always_clone
@@ -277,7 +289,7 @@ submodule_fetcher = Dependabot::FileFetchers.for_package_manager(package_manager
   credentials: credentials,
   repo_contents_path: submodule_repo_contents_path,
   options: options,
-) if submodule_source
+) if submodule_source && package_manager != "submodules"
 
 files = fetcher.files
 commit = fetcher.commit
