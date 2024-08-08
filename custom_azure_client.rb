@@ -23,8 +23,19 @@ module Dependabot
 
         response = nil
         if non_submodule_files.count > 0
-          response = super.create_commit(
-            branch_name, base_commit, commit_message, non_submodule_files, author_details
+          response = create_commit_with_changes(
+            branch_name, base_commit, commit_message,
+            non_submodule_files.map { |file|
+              {
+                changeType: "edit",
+                item: { path: file.path },
+                newContent: {
+                  content: Base64.encode64(file.content),
+                  contentType: "base64encoded"
+                }
+              }
+            },
+            author_details
           )
 
           base_commit = JSON.parse(response.body).fetch("refUpdates")[0].fetch("newObjectId")
@@ -32,17 +43,22 @@ module Dependabot
 
         if submodule_files.count > 0
           response = create_commit_with_changes(
-            branch_name, base_commit, commit_message, submodule_files.map do |file| {
+            branch_name, base_commit, commit_message,
+            submodule_files.map { |file|
+              {
                 changeType: "delete",
                 item: { path: file.path }
               }
-            end, author_details
+            },
+            author_details
           )
 
           base_commit = JSON.parse(response.body).fetch("refUpdates")[0].fetch("newObjectId")
 
           response = create_commit_with_changes(
-            branch_name, base_commit, commit_message, submodule_files.map do |file| {
+            branch_name, base_commit, commit_message,
+            submodule_files.map { |file|
+              {
                 changeType: "add",
                 item: { path: file.path },
                 newContent: {
@@ -50,7 +66,8 @@ module Dependabot
                   contentType: "base64encoded"
                 }
               }
-            end, author_details
+            },
+            author_details
           )
         end
 
@@ -68,7 +85,7 @@ module Dependabot
           .returns(T.untyped)
       end
       def create_commit_with_changes(branch_name, base_commit, commit_message, changes,
-                        author_details)
+                                     author_details)
         content = {
           refUpdates: [
             { name: "refs/heads/" + branch_name, oldObjectId: base_commit }
