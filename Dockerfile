@@ -49,8 +49,7 @@ RUN cd /tmp && \
     mkdir -p "${DOTNET_INSTALL_DIR}" && \
     ./dotnet-install.sh --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
     rm dotnet-install.sh && \
-    chown -R dependabot:dependabot "${DOTNET_INSTALL_DIR}/sdk" && \
-    sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
+    chown -R dependabot:dependabot "${DOTNET_INSTALL_DIR}/sdk"
 
 RUN dotnet --list-runtimes
 RUN dotnet --list-sdks
@@ -69,10 +68,12 @@ RUN mkdir -p /etc/apt/keyrings \
 # Install yarn berry and set it to a stable version
 RUN corepack prepare yarn@$YARN_VERSION --activate
 
+USER dependabot
+
+RUN sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
+
 COPY --chown=dependabot:dependabot Gemfile Gemfile.lock ${CODE_DIR}/
 WORKDIR ${CODE_DIR}
-
-USER dependabot
 
 RUN bundle config set --local path "vendor" \
   && bundle install --jobs 4 --retry 3
