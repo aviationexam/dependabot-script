@@ -4,3 +4,4 @@
 /.idea
 tmp
 test-env.rb
+git.store
