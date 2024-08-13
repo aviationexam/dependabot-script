@@ -43,6 +43,7 @@ submodule_repo_name = ENV["SUBMODULE_PROJECT_PATH"] # namespace/project
 
 # Directory where the base dependency files are.
 directory = ENV["DIRECTORY_PATH"] || "/"
+submodule_target_directory = ENV["SUBMODULE_TARGET_PATH"] || "/Submodule"
 submodule_directory = ENV["SUBMODULE_DIRECTORY_PATH"] || "/"
 
 # Branch to look at. Defaults to repo's default branch
@@ -272,7 +273,6 @@ options[:git_submodule_url_rewrite] = git_submodule_url_rewrite
 always_clone = true
 vendor_dependencies = options[:vendor_dependencies]
 repo_contents_path = File.expand_path(File.join("tmp", repo_name.split("/"))) if vendor_dependencies || always_clone
-submodule_repo_contents_path = File.expand_path(File.join("tmp", submodule_repo_name.split("/"))) if submodule_repo_name != nil && (vendor_dependencies || always_clone)
 
 ##############################
 # Fetch the dependency files #
@@ -284,15 +284,18 @@ fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
   repo_contents_path: repo_contents_path,
   options: options,
 )
+
+files = fetcher.files
+commit = fetcher.commit
+
+submodule_repo_contents_path = File.expand_path(File.join(fetcher.clone_repo_contents, submodule_target_directory)) if submodule_target_directory != nil && (vendor_dependencies || always_clone)
+
 submodule_fetcher = Dependabot::FileFetchers.for_package_manager(package_manager).new(
   source: submodule_source,
   credentials: credentials,
   repo_contents_path: submodule_repo_contents_path,
   options: options,
-) if submodule_source && package_manager != "submodules"
-
-files = fetcher.files
-commit = fetcher.commit
+) if submodule_repo_contents_path && submodule_source && package_manager != "submodules"
 
 submodule_files = submodule_fetcher.files if submodule_fetcher
 
