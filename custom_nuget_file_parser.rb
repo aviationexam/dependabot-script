@@ -17,10 +17,12 @@ module Dependabot
             discovery_json_path = NativeDiscoveryJsonReader.create_discovery_file_path_from_dependency_files(
               dependency_files
             )
-            CustomNativeHelpers.run_nuget_discover_tool(repo_root: T.must(repo_contents_path),
-                                                        workspace_path: workspace_path,
-                                                        output_path: discovery_json_path,
-                                                        credentials: credentials)
+            CustomNativeHelpers.run_nuget_discover_tool(
+              repo_root: T.must(repo_contents_path),
+              workspace_path: workspace_path,
+              output_path: discovery_json_path,
+              credentials: credentials
+            )
 
             discovery_json = NativeDiscoveryJsonReader.discovery_json_from_path(discovery_json_path)
             return [] unless discovery_json
@@ -34,10 +36,7 @@ module Dependabot
             NativeDiscoveryJsonReader.set_discovery_from_dependency_files(dependency_files: dependency_files,
                                                                           discovery: discovery_json_reader)
 
-            # we only return top-level dependencies and requirements here
-            dependency_set = discovery_json_reader.dependency_set(dependency_files: dependency_files,
-                                                                  top_level_only: true)
-            dependency_set.dependencies
+            discovery_json_reader.dependency_set.dependencies
           end
 
         T.must(self.class.file_dependency_cache[key])
