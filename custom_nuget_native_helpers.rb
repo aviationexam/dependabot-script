@@ -34,22 +34,19 @@ module Dependabot
         params(
           repo_root: String,
           proj_path: String,
-          dependency_name: String,
-          version: String,
-          previous_version: String,
+          dependency: Dependency,
           is_transitive: T::Boolean,
           credentials: T::Array[Dependabot::Credential]
         ).void
       end
       def self.run_nuget_updater_tool(
-        repo_root:, proj_path:, dependency_name:, version:, previous_version:,
-        is_transitive:, credentials:
+        repo_root:, proj_path:, dependency:, is_transitive:, credentials:
       )
         update_result_file_path = NativeHelpers.update_result_file_path
 
         (command, fingerprint) = NativeHelpers.get_nuget_updater_tool_command(
           repo_root: repo_root, proj_path: proj_path,
-          dependency_name: dependency_name, version: version, previous_version: previous_version,
+          dependency: dependency,
           is_transitive: is_transitive, result_output_path: update_result_file_path
         )
 
@@ -63,8 +60,8 @@ module Dependabot
           output = SharedHelpers.run_shell_command(
             command,
             allow_unsafe_shell_command: true,
-            env: env,
-            fingerprint: fingerprint
+            fingerprint: fingerprint,
+            env: env
           )
           puts output
 
