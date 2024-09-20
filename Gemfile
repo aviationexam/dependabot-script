@@ -4,4 +4,4 @@ source "https://rubygems.org"
 
 gem "faraday-retry"
 gem "irb"
-gem "dependabot-omnibus", "~> 0.275.0"
+gem "dependabot-omnibus", "~> 0.276.0"
