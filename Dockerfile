@@ -50,8 +50,8 @@ RUN cd /tmp && \
     curl --location --output "${DOTNET_INSTALL_SCRIPT_PATH}" "${DOTNET_SDK_INSTALL_URL}" && \
     chmod +x "${DOTNET_INSTALL_SCRIPT_PATH}" && \
     mkdir -p "${DOTNET_INSTALL_DIR}" && \
-     && "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_LTS_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" \
-     && "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_STS_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" \
+    "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_LTS_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
+    "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_STS_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
     rm dotnet-install.sh && \
     chown -R dependabot:dependabot "${DOTNET_INSTALL_DIR}/sdk"
 
