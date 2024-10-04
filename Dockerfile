@@ -6,9 +6,11 @@ ARG CODE_DIR=/home/dependabot/dependabot-script
 RUN mkdir -p ${CODE_DIR} && chown dependabot:dependabot ${CODE_DIR}
 
 # Install .NET SDK
-ARG DOTNET_SDK_VERSION=8.0.303
+ARG DOTNET_LTS_SDK_VERSION=8.0.402
+ARG DOTNET_STS_SDK_VERSION=9.0.100-rc.1.24452.12
 ARG DOTNET_SDK_INSTALL_URL=https://dot.net/v1/dotnet-install.sh
 ENV DOTNET_INSTALL_DIR=/usr/local/dotnet/current
+ENV DOTNET_INSTALL_SCRIPT_PATH=/tmp/dotnet-install.sh
 ENV DOTNET_NOLOGO=true
 ENV DOTNET_ROOT="${DOTNET_INSTALL_DIR}"
 ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
@@ -44,10 +46,11 @@ RUN apt update && \
   rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp && \
-    curl --location --output dotnet-install.sh "${DOTNET_SDK_INSTALL_URL}" && \
-    chmod +x dotnet-install.sh && \
+    curl --location --output "${DOTNET_INSTALL_SCRIPT_PATH}" "${DOTNET_SDK_INSTALL_URL}" && \
+    chmod +x "${DOTNET_INSTALL_SCRIPT_PATH}" && \
     mkdir -p "${DOTNET_INSTALL_DIR}" && \
-    ./dotnet-install.sh --version "${DOTNET_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
+     && "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_LTS_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" \
+     && "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_STS_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" \
     rm dotnet-install.sh && \
     chown -R dependabot:dependabot "${DOTNET_INSTALL_DIR}/sdk"
 
