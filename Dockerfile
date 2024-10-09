@@ -7,6 +7,7 @@ RUN mkdir -p ${CODE_DIR} && chown dependabot:dependabot ${CODE_DIR}
 
 # Install .NET SDK
 ARG DOTNET_LTS_SDK_VERSION=8.0.403
+ARG DOTNET_STS_SDK_VERSION_DEPENDABOT=9.0.100-rc.1.24452.12
 ARG DOTNET_STS_SDK_VERSION=9.0.100-rc.2.24474.11
 ARG DOTNET_SDK_INSTALL_URL=https://dot.net/v1/dotnet-install.sh
 ENV DOTNET_INSTALL_DIR=/usr/local/dotnet/current
@@ -52,6 +53,7 @@ RUN cd /tmp && \
     mkdir -p "${DOTNET_INSTALL_DIR}" && \
     "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_LTS_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
     "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_STS_SDK_VERSION}" --install-dir "${DOTNET_INSTALL_DIR}" && \
+    "${DOTNET_INSTALL_SCRIPT_PATH}" --version "${DOTNET_STS_SDK_VERSION_DEPENDABOT}" --install-dir "${DOTNET_INSTALL_DIR}" && \
     rm dotnet-install.sh && \
     chown -R dependabot:dependabot "${DOTNET_INSTALL_DIR}/sdk"
 
