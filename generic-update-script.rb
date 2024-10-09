@@ -499,7 +499,9 @@ dependencies_to_update.each do |key, items|
     options: options,
   )
 
-  updated_files = updater.updated_dependency_files.uniq { |updated_file| updated_file.path }
+  updated_files = updater.updated_dependency_files
+                         .uniq { |updated_file| updated_file.path }
+                         .reject { |updated_file| updated_file.path.end_with?("packages.lock.json") }
 
   next unless updated_files.any?
 
