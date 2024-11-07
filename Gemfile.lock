@@ -46,6 +46,9 @@ GEM
       sorbet-runtime (~> 0.5.11577)
       stackprof (~> 0.2.16)
       toml-rb (>= 1.1.2, < 4.0)
+    dependabot-git_submodules (0.284.0)
+      dependabot-common (= 0.284.0)
+      parseconfig (~> 1.0, < 1.1.0)
     dependabot-gradle (0.284.0)
       dependabot-common (= 0.284.0)
       dependabot-maven (= 0.284.0)
@@ -106,6 +109,7 @@ GEM
     opentelemetry-api (1.4.0)
     opentelemetry-metrics-api (0.1.1)
       opentelemetry-api (~> 1.0)
+    parseconfig (1.0.8)
     parser (3.3.6.0)
       ast (~> 2.4.1)
       racc
@@ -144,6 +148,7 @@ PLATFORMS
 DEPENDENCIES
   dependabot-cargo (~> 0.284.0)
   dependabot-common (~> 0.284.0)
+  dependabot-git_submodules (~> 0.284.0)
   dependabot-gradle (~> 0.284.0)
   dependabot-maven (~> 0.284.0)
   dependabot-npm_and_yarn (~> 0.284.0)
