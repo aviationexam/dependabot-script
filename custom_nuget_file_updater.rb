@@ -10,9 +10,9 @@ module Dependabot
       sig { params(dependency: Dependency, proj_path: String).void }
       def call_nuget_updater_tool(dependency, proj_path)
         CustomNativeHelpers.run_nuget_updater_tool(
-          repo_root: T.must(repo_contents_path), proj_path: proj_path,
-          dependency: dependency, is_transitive: !dependency.top_level?,
-          credentials: credentials
+          job_path: job_file_path, repo_root: T.must(repo_contents_path),
+          proj_path: proj_path, dependency: dependency,
+          is_transitive: !dependency.top_level?, credentials: credentials
         )
 
         # Tests need to track how many times we call the tooling updater to ensure we don't recurse needlessly

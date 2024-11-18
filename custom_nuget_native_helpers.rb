@@ -16,9 +16,11 @@ module Dependabot
         ).void
       end
       def self.run_nuget_discover_tool(repo_root:, workspace_path:, output_path:, credentials:)
-        (command, fingerprint) = NativeHelpers.get_nuget_discover_tool_command(repo_root: repo_root,
-                                                                               workspace_path: workspace_path,
-                                                                               output_path: output_path)
+        (command, fingerprint) = NativeHelpers.get_nuget_discover_tool_command(
+          repo_root: repo_root,
+          workspace_path: workspace_path,
+          output_path: output_path
+        )
 
         env = get_env(credentials: credentials)
 
@@ -32,6 +34,7 @@ module Dependabot
 
       sig do
         params(
+          job_path: String,
           repo_root: String,
           proj_path: String,
           dependency: Dependency,
@@ -39,15 +42,12 @@ module Dependabot
           credentials: T::Array[Dependabot::Credential]
         ).void
       end
-      def self.run_nuget_updater_tool(
-        repo_root:, proj_path:, dependency:, is_transitive:, credentials:
-      )
-        update_result_file_path = NativeHelpers.update_result_file_path
-
+      def self.run_nuget_updater_tool(job_path:, repo_root:, proj_path:, dependency:, is_transitive:, credentials:)
         (command, fingerprint) = NativeHelpers.get_nuget_updater_tool_command(
-          repo_root: repo_root, proj_path: proj_path,
-          dependency: dependency,
-          is_transitive: is_transitive, result_output_path: update_result_file_path
+          job_path: job_path, repo_root: repo_root,
+          proj_path: proj_path, dependency: dependency,
+          is_transitive: is_transitive,
+          result_output_path: update_result_file_path
         )
 
         env = get_env(credentials: credentials)
@@ -55,8 +55,6 @@ module Dependabot
         puts "running NuGet updater:\n" + command
 
         NuGetConfigCredentialHelpers.patch_nuget_config_for_action(credentials) do
-          env["UseNewNugetPackageResolver"] = "true" if Dependabot::Experiments.enabled?(:nuget_dependency_solver)
-
           output = SharedHelpers.run_shell_command(
             command,
             allow_unsafe_shell_command: true,
