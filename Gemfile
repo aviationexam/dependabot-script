@@ -2,16 +2,16 @@
 
 source "https://rubygems.org"
 
-gem "dependabot-cargo", "~> 0.288.0"
+gem "dependabot-cargo", "~> 0.289.0"
 
-gem "dependabot-gradle", "~> 0.288.0"
+gem "dependabot-gradle", "~> 0.289.0"
 
-gem "dependabot-maven", "~> 0.288.0"
+gem "dependabot-maven", "~> 0.289.0"
 
-gem "dependabot-npm_and_yarn", "~> 0.288.0"
+gem "dependabot-npm_and_yarn", "~> 0.289.0"
 
-gem "dependabot-nuget", "~> 0.288.0"
+gem "dependabot-nuget", "~> 0.289.0"
 
-gem "dependabot-common", "~> 0.288.0"
+gem "dependabot-common", "~> 0.289.0"
 
-gem "dependabot-git_submodules", "~> 0.288.0"
+gem "dependabot-git_submodules", "~> 0.289.0"
