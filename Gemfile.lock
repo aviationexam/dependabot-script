@@ -155,7 +155,7 @@ PLATFORMS
 DEPENDENCIES
   dependabot-cargo (~> 0.296.0)
   dependabot-common (~> 0.296.0)
-  dependabot-git_submodules (~> 0.296.0)
+  dependabot-git_submodules (~> 0.296.2)
   dependabot-gradle (~> 0.296.0)
   dependabot-maven (~> 0.296.0)
   dependabot-npm_and_yarn (~> 0.296.2)
