@@ -6,7 +6,7 @@ gem "dependabot-cargo", "~> 0.296.0"
 
 gem "dependabot-gradle", "~> 0.296.0"
 
-gem "dependabot-maven", "~> 0.296.0"
+gem "dependabot-maven", "~> 0.296.2"
 
 gem "dependabot-npm_and_yarn", "~> 0.296.0"
 
