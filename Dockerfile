@@ -1,6 +1,6 @@
 FROM docker.io/library/rust:1.84.1-bookworm AS rust
 
-FROM ghcr.io/dependabot/dependabot-updater-core:0.296.2
+FROM ghcr.io/dependabot/dependabot-updater-core:0.297.0
 
 ARG CODE_DIR=/home/dependabot/dependabot-script
 RUN mkdir -p ${CODE_DIR} && chown dependabot:dependabot ${CODE_DIR}
