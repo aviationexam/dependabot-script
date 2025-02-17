@@ -153,7 +153,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  dependabot-cargo (~> 0.296.0)
+  dependabot-cargo (~> 0.296.3)
   dependabot-common (~> 0.296.0)
   dependabot-git_submodules (~> 0.296.2)
   dependabot-gradle (~> 0.296.3)
