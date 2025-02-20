@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 gem "dependabot-cargo", "~> 0.297.0"
 
-gem "dependabot-gradle", "~> 0.297.0"
+gem "dependabot-gradle", "~> 0.297.2"
 
 gem "dependabot-maven", "~> 0.297.0"
 
