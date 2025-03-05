@@ -12,6 +12,6 @@ gem "dependabot-npm_and_yarn", "~> 0.299.0"
 
 gem "dependabot-nuget", "~> 0.299.0"
 
-gem "dependabot-common", "~> 0.299.0"
+gem "dependabot-common", "~> 0.299.1"
 
 gem "dependabot-git_submodules", "~> 0.299.0"
