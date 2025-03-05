@@ -8,7 +8,7 @@ gem "dependabot-gradle", "~> 0.299.0"
 
 gem "dependabot-maven", "~> 0.299.0"
 
-gem "dependabot-npm_and_yarn", "~> 0.299.0"
+gem "dependabot-npm_and_yarn", "~> 0.299.1"
 
 gem "dependabot-nuget", "~> 0.299.0"
 
