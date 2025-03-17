@@ -157,7 +157,7 @@ DEPENDENCIES
   dependabot-common (~> 0.301.0)
   dependabot-git_submodules (~> 0.301.1)
   dependabot-gradle (~> 0.301.0)
-  dependabot-maven (~> 0.301.0)
+  dependabot-maven (~> 0.301.1)
   dependabot-npm_and_yarn (~> 0.301.0)
   dependabot-nuget (~> 0.301.1)
 
