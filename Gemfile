@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-gem "dependabot-cargo", "~> 0.301.0"
+gem "dependabot-cargo", "~> 0.301.1"
 
 gem "dependabot-gradle", "~> 0.301.0"
 
