@@ -14,4 +14,4 @@ gem "dependabot-nuget", "~> 0.301.0"
 
 gem "dependabot-common", "~> 0.301.0"
 
-gem "dependabot-git_submodules", "~> 0.301.0"
+gem "dependabot-git_submodules", "~> 0.301.1"
